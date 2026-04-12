@@ -4,18 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FlippingDave</title>
-  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --bg: #0c0c0c;
-      --surface: #161616;
-      --accent: #ff5e00;
-      --accent2: #ffd000;
-      --text: #f2f2f2;
-      --muted: #666;
-      --border: #222;
+      --bg:      #d5cfc7;
+      --surface: #ffffff;
+      --accent:  #1a6cf5;
+      --text:    #1c1917;
+      --sub:     #57534e;
+      --muted:   #a8a29e;
+      --border:  #cac4bc;
+      --shadow:  0 2px 4px rgba(0,0,0,.05), 0 8px 28px rgba(0,0,0,.09);
     }
 
     html { scroll-behavior: smooth; }
@@ -25,399 +26,530 @@
       color: var(--text);
       font-family: 'Inter', sans-serif;
       min-height: 100vh;
-      overflow-x: hidden;
-      cursor: default;
+      position: relative;
     }
 
-    /* ── GRAIN OVERLAY ── */
+    /* ── GRAIN ── */
     body::after {
-      content: '';
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 1000;
-      opacity: 0.035;
+      content: ''; position: fixed; inset: 0;
+      pointer-events: none; z-index: 998; opacity: .028;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
     }
 
-    /* ── ANT ── */
+    /* ── TOP GLOW ── */
+    body::before {
+      content: ''; position: fixed; top: -120px; left: 50%;
+      transform: translateX(-50%);
+      width: 700px; height: 420px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(26,108,245,.12) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── MOUSE CURSOR + TAIL (desktop only) ── */
+    @media (pointer: fine) {
+      body, a, button { cursor: none; }
+
+      #mouse-cursor {
+        position: fixed;
+        pointer-events: none;
+        z-index: 99999;
+        width: 40px; height: 21px;   /* must match SVG width="40" */
+        overflow: visible;
+      }
+
+      .tail-dot {
+        position: fixed;
+        border-radius: 50%;
+        background: #c8a090;
+        transform: translate(-100%, -50%); /* right edge at cursor — dot stays behind nose */
+        pointer-events: none;
+        z-index: 99997;
+      }
+    }
+
+    /* ── ANT — actual life size via physical mm units ── */
     #ant {
       position: fixed;
-      width: 11px;
-      height: 7px;
-      pointer-events: none;
+      top: 0; left: 0;
+      width: 2.5mm;
+      height: 1.5mm;
+      pointer-events: all;
       z-index: 9999;
-      transform-origin: 50% 50%;
-      will-change: transform, left, top;
+      overflow: hidden;
+      /* no will-change — compositor promotion breaks fixed positioning in Chrome */
     }
 
-    /* ── HERO ── */
-    .hero {
+    /* ════════════════════════════════
+       PAGE LAYOUT
+    ════════════════════════════════ */
+    .page {
+      position: relative; z-index: 1;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 2.5rem 1.2rem;
+    }
+
+    /* ── PROFILE CARD ── */
+    .profile-card {
+      background: var(--surface);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 2.4rem 2rem 2rem;
       text-align: center;
-      padding: 3rem 1.5rem 5rem;
-      position: relative;
+      width: 100%; max-width: 400px;
     }
 
-    /* animated gradient blob behind name */
-    .hero::before {
-      content: '';
-      position: absolute;
-      width: 600px;
-      height: 600px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(255,94,0,0.12) 0%, transparent 70%);
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -60%);
-      pointer-events: none;
-      animation: pulse 6s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { transform: translate(-50%, -60%) scale(1); opacity: 1; }
-      50% { transform: translate(-50%, -60%) scale(1.15); opacity: 0.6; }
-    }
-
-    .avatar-wrap {
-      position: relative;
-      margin-bottom: 2rem;
-    }
+    /* ── AVATAR — solid ring only, no spinning dashed ring ── */
+    .avatar-wrap { position: relative; display: inline-block; margin-bottom: 1.3rem; }
 
     .avatar {
-      width: 110px;
-      height: 110px;
-      border-radius: 50%;
-      object-fit: cover;
+      width: 104px; height: 104px;
+      border-radius: 50%; object-fit: cover; display: block;
       border: 3px solid var(--accent);
-      display: block;
-      filter: grayscale(20%);
-      transition: filter 0.3s;
-    }
-    .avatar:hover { filter: grayscale(0%); }
-
-    /* spinning ring */
-    .avatar-wrap::before {
-      content: '';
-      position: absolute;
-      inset: -6px;
-      border-radius: 50%;
-      border: 2px dashed var(--accent);
-      opacity: 0.5;
-      animation: spin 18s linear infinite;
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    h1 {
-      font-family: 'Black Han Sans', sans-serif;
-      font-size: clamp(3.5rem, 12vw, 9rem);
-      line-height: 0.92;
-      letter-spacing: -3px;
-      color: var(--text);
-      position: relative;
-      z-index: 1;
-      user-select: none;
+    /* ── HANDLE ── */
+    .handle {
+      margin-top: .6rem;
+      font-size: 1rem; font-weight: 700;
+      color: var(--muted);
+      display: inline-block;
+      cursor: default; user-select: none;
+      transition: color .2s, letter-spacing .2s;
     }
-
-    h1 .flip { color: var(--accent); }
-    h1 .dave { color: var(--text); }
-
-    /* glitch flicker on hover */
-    h1:hover .flip {
-      animation: glitch 0.3s steps(2, end) 1;
+    .handle:hover {
+      color: var(--accent);
+      letter-spacing: .06em;
+      animation: glitch .35s steps(2,end) 1;
     }
-
     @keyframes glitch {
-      0%   { text-shadow: 3px 0 #ff0080, -3px 0 #00ffff; }
-      25%  { text-shadow: -3px 0 #ff0080, 3px 0 #00ffff; }
-      50%  { text-shadow: 3px 2px #ff0080, -3px -2px #00ffff; }
-      75%  { text-shadow: -3px 0 #ff0080, 3px 0 #00ffff; }
+      0%   { text-shadow:  3px 0 #ff0080,-3px 0 #00ccff; }
+      33%  { text-shadow: -3px 0 #ff0080, 3px 0 #00ccff; }
+      66%  { text-shadow:  3px 2px #ff0080,-3px -2px #00ccff; }
       100% { text-shadow: none; }
     }
+    .divider { margin: 1.4rem 0; border: none; border-top: 1px solid var(--border); }
 
-    .tagline {
-      margin-top: 1.2rem;
-      font-size: 0.78rem;
-      letter-spacing: 0.35em;
-      text-transform: uppercase;
-      color: var(--muted);
-      position: relative;
-      z-index: 1;
-    }
-
-    /* ── SOCIALS ── */
+    /* ── SOCIALS — 3×3 grid ── */
     .socials {
-      display: flex;
-      gap: 1.6rem;
-      margin-top: 2.5rem;
-      position: relative;
-      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .7rem;
     }
 
-    .socials a {
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: color 0.2s, transform 0.2s;
-      text-decoration: none;
-    }
-
-    .socials a:hover {
-      color: var(--accent);
-      transform: translateY(-3px) scale(1.2);
-    }
-
-    .socials svg { width: 20px; height: 20px; fill: currentColor; }
-
-    /* X logo text */
-    .x-logo {
-      font-family: 'Black Han Sans', sans-serif;
-      font-size: 1.2rem;
-      line-height: 1;
-    }
-
-    /* ── LINK BUTTONS ── */
-    .links {
-      display: flex;
-      flex-direction: column;
-      gap: 0.85rem;
-      margin-top: 3rem;
+    .soc-btn {
       width: 100%;
-      max-width: 400px;
-      position: relative;
-      z-index: 1;
+      aspect-ratio: 1;
+      border-radius: 18px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--sub); text-decoration: none;
+      transition: background .18s, border-color .18s, color .18s, box-shadow .18s;
+      will-change: transform; position: relative;
     }
 
-    .link-btn {
-      display: flex;
-      align-items: center;
-      gap: 0.9rem;
-      padding: 0.95rem 1.4rem;
+    .soc-btn:hover {
+      background: var(--bc, var(--accent));
+      border-color: var(--bc, var(--accent));
+      color: #fff;
+      box-shadow: 0 6px 20px var(--bs, rgba(26,108,245,.32));
+    }
+
+    /* Instagram gradient */
+    .soc-btn.insta:hover {
+      background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+      border-color: #d6249f;
+      box-shadow: 0 6px 20px rgba(214,36,159,.35);
+    }
+
+    .soc-btn svg  { width: 26px; height: 26px; }
+    .x-logo { font-family: 'Black Han Sans', sans-serif; font-size: 1.3rem; line-height: 1; }
+
+    /* Share dropdown */
+    .soc-wrap { position: relative; }
+
+    .share-menu {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%; transform: translateX(-50%);
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      text-decoration: none;
-      color: var(--text);
-      font-weight: 600;
-      font-size: 0.9rem;
-      letter-spacing: 0.04em;
-      transition: border-color 0.2s, background 0.2s, transform 0.15s, box-shadow 0.2s;
-      position: relative;
-      overflow: hidden;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.13);
+      padding: .55rem;
+      min-width: 195px;
+      z-index: 200;
+      display: none; flex-direction: column; gap: .2rem;
+      white-space: nowrap;
     }
+    .share-menu.open { display: flex; }
 
-    .link-btn::after {
-      content: '→';
-      margin-left: auto;
-      color: var(--muted);
-      transition: transform 0.2s, color 0.2s;
+    .share-item {
+      display: flex; align-items: center; gap: .7rem;
+      padding: .6rem .85rem;
+      border-radius: 10px;
+      text-decoration: none; color: var(--text);
+      font-size: .85rem; font-weight: 500;
+      transition: background .15s;
+      border: none; background: none; text-align: left; width: 100%;
     }
-
-    .link-btn:hover {
-      border-color: var(--accent);
-      background: #1c1c1c;
-      transform: translateX(5px);
-      box-shadow: -4px 0 0 var(--accent);
-    }
-
-    .link-btn:hover::after {
-      transform: translateX(4px);
-      color: var(--accent);
-    }
-
-    .link-icon {
-      font-size: 1.2rem;
-      flex-shrink: 0;
-    }
-
-    /* ── FOOTER ── */
-    footer {
-      text-align: center;
-      padding: 2rem;
-      color: var(--muted);
-      font-size: 0.75rem;
-      letter-spacing: 0.1em;
-    }
-
-    footer span { color: var(--accent); }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width: 480px) {
-      h1 { letter-spacing: -1px; }
-    }
+    .share-item:hover { background: var(--bg); color: var(--accent); }
+    .share-item svg { width: 15px; height: 15px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .si { font-size: .9rem; flex-shrink: 0; line-height: 1; }
   </style>
 </head>
 <body>
 
-<!-- ══ THE ANT ══ -->
-<!-- Life-sized ant: ~10–12px wide. Barely visible on purpose. -->
+<!-- ══ ANT — life-size, no legs (invisible at real scale), just body + antennae ══ -->
 <svg id="ant" viewBox="0 0 22 13" xmlns="http://www.w3.org/2000/svg">
-  <!-- abdomen -->
-  <ellipse cx="17.5" cy="6.5" rx="4" ry="3.2" fill="#111"/>
-  <!-- thorax -->
-  <ellipse cx="10.5" cy="6.5" rx="2.4" ry="1.9" fill="#111"/>
-  <!-- head -->
-  <ellipse cx="4.5" cy="6.5" rx="3" ry="2.3" fill="#111"/>
-  <!-- antennae -->
-  <line x1="2.5" y1="4.5" x2="0.2" y2="0.5" stroke="#111" stroke-width="0.7" stroke-linecap="round"/>
-  <line x1="4"   y1="4.2" x2="2.2" y2="0.3" stroke="#111" stroke-width="0.7" stroke-linecap="round"/>
-  <!-- antenna tips (tiny dots) -->
-  <circle cx="0.2" cy="0.5" r="0.6" fill="#111"/>
-  <circle cx="2.2" cy="0.3" r="0.6" fill="#111"/>
-  <!-- legs (3 per side, attached to thorax) -->
-  <line x1="9"  y1="5.5" x2="6"  y2="2.5" stroke="#111" stroke-width="0.65" stroke-linecap="round"/>
-  <line x1="9"  y1="7.5" x2="6"  y2="10.5" stroke="#111" stroke-width="0.65" stroke-linecap="round"/>
-  <line x1="10.5" y1="5" x2="9"  y2="1.5" stroke="#111" stroke-width="0.65" stroke-linecap="round"/>
-  <line x1="10.5" y1="8" x2="9"  y2="11.5" stroke="#111" stroke-width="0.65" stroke-linecap="round"/>
-  <line x1="12.5" y1="5.5" x2="14.5" y2="2.5" stroke="#111" stroke-width="0.65" stroke-linecap="round"/>
-  <line x1="12.5" y1="7.5" x2="14.5" y2="10.5" stroke="#111" stroke-width="0.65" stroke-linecap="round"/>
+  <!-- abdomen (rear, large) -->
+  <ellipse cx="16.5" cy="6.5" rx="5"   ry="4"   fill="#2c1508"/>
+  <!-- thorax (middle, small) -->
+  <ellipse cx="9.5"  cy="6.5" rx="2.3" ry="1.8" fill="#2c1508"/>
+  <!-- head (front) -->
+  <ellipse cx="4"    cy="6.5" rx="3"   ry="2.3" fill="#2c1508"/>
+  <!-- antennae — kept short so they stay within viewBox -->
+  <line x1="2.8" y1="4.8" x2="1.2" y2="2.2" stroke="#2c1508" stroke-width="0.9" stroke-linecap="round"/>
+  <line x1="4.5" y1="4.5" x2="3.2" y2="1.8" stroke="#2c1508" stroke-width="0.9" stroke-linecap="round"/>
+  <circle cx="1.2" cy="2.2" r="0.7" fill="#2c1508"/>
+  <circle cx="3.2" cy="1.8" r="0.7" fill="#2c1508"/>
   <!-- eye -->
-  <circle cx="3.2" cy="5.8" r="0.5" fill="#333"/>
+  <circle cx="3"   cy="6"   r="0.55" fill="#5a2a0a"/>
 </svg>
 
-<!-- ══ HERO ══ -->
-<section class="hero">
+<div class="page">
+  <div class="profile-card">
 
-  <div class="avatar-wrap">
-    <!-- Tries to load avatar from Twitter/X; falls back gracefully -->
-    <img class="avatar"
-         src="https://unavatar.io/twitter/FlippingDave"
-         alt="FlippingDave"
-         onerror="this.src='https://api.dicebear.com/7.x/initials/svg?seed=FD&backgroundColor=ff5e00&textColor=ffffff'">
+    <div class="avatar-wrap">
+      <img class="avatar"
+           src="https://unavatar.io/twitter/FlippingDave"
+           alt="FlippingDave"
+           onerror="this.src='https://api.dicebear.com/7.x/initials/svg?seed=FD&backgroundColor=1a6cf5&textColor=ffffff'">
+    </div>
+
+    <p class="handle">@FlippingDave</p>
+
+    <hr class="divider">
+
+    <nav class="socials" aria-label="Social links">
+
+      <a class="soc-btn" style="--bc:#000;--bs:rgba(0,0,0,.25)"
+         href="https://x.com/FlippingDave" target="_blank" rel="noopener" title="X / Twitter">
+        <span class="x-logo">𝕏</span>
+      </a>
+
+      <a class="soc-btn insta"
+         href="https://instagram.com/FlippingDave" target="_blank" rel="noopener" title="Instagram">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      </a>
+
+      <a class="soc-btn" style="--bc:#1877F2;--bs:rgba(24,119,242,.35)"
+         href="https://facebook.com/FlippingDave" target="_blank" rel="noopener" title="Facebook">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      </a>
+
+      <a class="soc-btn" style="--bc:#0A66C2;--bs:rgba(10,102,194,.35)"
+         href="https://www.linkedin.com/in/flippingdave/" target="_blank" rel="noopener" title="LinkedIn">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      </a>
+
+      <a class="soc-btn" style="--bc:#25D366;--bs:rgba(37,211,102,.35)"
+         href="https://api.whatsapp.com/send?phone=61450443283" target="_blank" rel="noopener" title="WhatsApp">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      </a>
+
+      <a class="soc-btn" style="--bc:#2D8CFF;--bs:rgba(45,140,255,.35)"
+         href="https://us04web.zoom.us/j/3858313619?pwd=VWxxT2J3VUVmM3drd1VuTmdXZDVmQT09" target="_blank" rel="noopener" title="Zoom">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1.116 5.056A2.234 2.234 0 0 0 0 7.026v8.755a3.165 3.165 0 0 0 3.166 3.166h13.189a2.234 2.234 0 0 0 2.234-2.234V7.026a2.234 2.234 0 0 0-3.35-1.97L11.55 7.801V7.026A2.234 2.234 0 0 0 9.315 4.79H3.166a3.165 3.165 0 0 0-2.05.266zm13.743 2.56 4.045-2.527a.744.744 0 0 1 1.116.644v8.534a.744.744 0 0 1-1.116.644l-4.045-2.527V7.616z"/></svg>
+      </a>
+
+      <a class="soc-btn" style="--bc:#0084FF;--bs:rgba(0,132,255,.35)"
+         href="http://m.me/FlippingDave" target="_blank" rel="noopener" title="Messenger">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.626 0 12-4.974 12-11.111C24 4.975 18.626 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8.1l3.131 3.26L19.752 8.1l-6.561 6.863z"/></svg>
+      </a>
+
+      <!-- Email — filled envelope icon (clearly recognisable, not a square) -->
+      <a class="soc-btn" style="--bc:#EA4335;--bs:rgba(234,67,53,.35)"
+         href="mailto:Dave@FlippingDave.com" title="Email Dave">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/>
+        </svg>
+      </a>
+
+      <!-- Share -->
+      <div class="soc-wrap">
+        <button class="soc-btn" id="share-btn" title="Share"
+                style="--bc:#7c3aed;--bs:rgba(124,58,237,.35)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round" width="26" height="26">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+        </button>
+        <div class="share-menu" id="share-menu">
+          <button class="share-item" id="copy-link-btn">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span id="copy-label">Copy link</span>
+          </button>
+          <a class="share-item" id="share-x"  href="#" target="_blank" rel="noopener"><span class="si">𝕏</span> Share on X</a>
+          <a class="share-item" id="share-fb" href="#" target="_blank" rel="noopener"><span class="si">📘</span> Share on Facebook</a>
+          <a class="share-item" id="share-wa" href="#" target="_blank" rel="noopener"><span class="si">💬</span> Share on WhatsApp</a>
+        </div>
+      </div>
+
+    </nav>
   </div>
+</div>
 
-  <h1><span class="flip">Flipping</span><br><span class="dave">Dave</span></h1>
-  <p class="tagline">Flip &nbsp;·&nbsp; Connect &nbsp;·&nbsp; Create</p>
-
-  <!-- Socials -->
-  <nav class="socials" aria-label="Social links">
-
-    <a href="https://x.com/FlippingDave" target="_blank" rel="noopener" title="X / Twitter">
-      <span class="x-logo">𝕏</span>
-    </a>
-
-    <a href="https://instagram.com/FlippingDave" target="_blank" rel="noopener" title="Instagram">
-      <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-    </a>
-
-    <a href="https://facebook.com/FlippingDave" target="_blank" rel="noopener" title="Facebook">
-      <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-    </a>
-
-    <a href="https://linkedin.com/in/FlippingDave" target="_blank" rel="noopener" title="LinkedIn">
-      <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-    </a>
-
-    <a href="https://wa.me/" target="_blank" rel="noopener" title="WhatsApp">
-      <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-    </a>
-
-  </nav>
-
-  <!-- Link buttons -->
-  <div class="links">
-    <a class="link-btn" href="https://us04web.zoom.us/j/3858313619?pwd=VWxxT2J3VUVmM3drd1VuTmdXZDVmQT09" target="_blank" rel="noopener">
-      <span class="link-icon">📹</span> Jump on Zoom
-    </a>
-    <a class="link-btn" href="http://m.me/FlippingDave" target="_blank" rel="noopener">
-      <span class="link-icon">💬</span> Message on Messenger
-    </a>
-    <a class="link-btn" href="http://FlippingDave.com" target="_blank" rel="noopener">
-      <span class="link-icon">🌐</span> FlippingDave.com
-    </a>
-  </div>
-
-</section>
-
-<footer>
-  <p>© 2026 &nbsp;<span>FlippingDave</span> &nbsp;·&nbsp; Made with ☕ &amp; chaos</p>
-</footer>
-
-<!-- ══ ANT BRAIN ══ -->
 <script>
-(function() {
+(function () {
+  'use strict';
+
+  /* ─────────────── SHARE ─────────────── */
+  const shareBtn  = document.getElementById('share-btn');
+  const shareMenu = document.getElementById('share-menu');
+  const copyLabel = document.getElementById('copy-label');
+  const url = location.href;
+  document.getElementById('share-x').href  = `https://twitter.com/intent/tweet?text=Check+out+%40FlippingDave!&url=${encodeURIComponent(url)}`;
+  document.getElementById('share-fb').href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+  document.getElementById('share-wa').href = `https://api.whatsapp.com/send?text=${encodeURIComponent('Check out FlippingDave! ' + url)}`;
+  shareBtn.addEventListener('click', e => { e.stopPropagation(); shareMenu.classList.toggle('open'); });
+  document.addEventListener('click', () => shareMenu.classList.remove('open'));
+  shareMenu.addEventListener('click', e => e.stopPropagation());
+  document.getElementById('copy-link-btn').addEventListener('click', () => {
+    navigator.clipboard.writeText(url).then(() => {
+      copyLabel.textContent = '✓ Copied!';
+      setTimeout(() => { copyLabel.textContent = 'Copy link'; }, 1500);
+    });
+  });
+
+  /* ─────────────── ANT ─────────────── */
   const ant = document.getElementById('ant');
-  if (!ant) return;
+  document.documentElement.appendChild(ant); /* escape body — guarantees viewport containing block */
 
-  let x = window.innerWidth  * (0.2 + Math.random() * 0.6);
-  let y = window.innerHeight * (0.2 + Math.random() * 0.6);
-  let angle  = Math.random() * Math.PI * 2;
-  let speed  = 0.55;
-  let legPhase = 0;
-  let pauseFrames = 0;
-  let turnTimer = 0;
+  /* dynamic sizing — getBoundingClientRect is reliable for SVG; offsetWidth can return 0 */
+  let antW = 0, antH = 0;
+  function cacheAntSize() {
+    const r = ant.getBoundingClientRect();
+    antW = r.width  || 9;   /* fallback: 2.5mm @96dpi ≈ 9px */
+    antH = r.height || 6;   /* fallback: 1.5mm @96dpi ≈ 6px */
+  }
+  cacheAntSize();
 
-  // Leg positions baked into the SVG lines — we animate by skewing
-  // which makes the legs appear to move in an alternating gait
+  /* cache viewport so boundary maths never sees 0 */
+  let vpW = innerWidth  || document.documentElement.clientWidth  || 800;
+  let vpH = innerHeight || document.documentElement.clientHeight || 600;
+  addEventListener('resize', () => {
+    vpW = innerWidth; vpH = innerHeight;
+    cacheAntSize();
+  });
 
-  function tick() {
-    if (pauseFrames > 0) {
-      // Ant stopped — antennae-wiggle via tiny wobble in place
-      pauseFrames--;
-      const deg = angle * (180 / Math.PI);
-      const wobble = Math.sin(Date.now() / 80) * 1.5;
-      ant.style.left = (x - 5.5) + 'px';
-      ant.style.top  = (y - 3.5) + 'px';
-      ant.style.transform = `rotate(${deg + wobble}deg)`;
-      requestAnimationFrame(tick);
-      return;
-    }
+  let ax = vpW * (.2 + Math.random() * .6);
+  let ay = vpH * (.2 + Math.random() * .6);
+  let angle = Math.random() * Math.PI * 2;
+  let baseSpeed = 0.35, speed = baseSpeed;
+  let legPhase = 0, pauseLeft = 0, turnTimer = 0, fleeFrames = 0;
 
-    // Random pause (ant stops to "investigate")
-    if (Math.random() < 0.004) {
-      pauseFrames = 40 + Math.floor(Math.random() * 80);
-      requestAnimationFrame(tick);
-      return;
-    }
-
-    // Gentle random steering
-    angle += (Math.random() - 0.5) * 0.09;
-
-    // Sharper random turns (like an ant changing direction)
-    turnTimer--;
-    if (turnTimer <= 0) {
-      angle += (Math.random() - 0.5) * 1.0;
-      turnTimer = 80 + Math.floor(Math.random() * 120);
-    }
-
-    // Move
-    x += Math.cos(angle) * speed;
-    y += Math.sin(angle) * speed;
-
-    // Bounce at edges
-    const pad = 18;
-    if (x < pad)                    { angle = Math.PI - angle; x = pad; }
-    if (x > window.innerWidth - pad) { angle = Math.PI - angle; x = window.innerWidth - pad; }
-    if (y < pad)                    { angle = -angle; y = pad; }
-    if (y > window.innerHeight - pad){ angle = -angle; y = window.innerHeight - pad; }
-
-    // Leg animation: alternating skew mimics walking gait
-    legPhase += 0.35;
-    const skew = Math.sin(legPhase) * 1.8;
-
-    const deg = angle * (180 / Math.PI);
-    ant.style.left      = (x - 5.5) + 'px';
-    ant.style.top       = (y - 3.5) + 'px';
-    ant.style.transform = `rotate(${deg}deg) skewY(${skew}deg)`;
-
-    requestAnimationFrame(tick);
+  function placeAnt(px, py, ang, skew) {
+    const tx = px - antW / 2, ty = py - antH / 2;
+    ant.style.transform = `translate(${tx}px,${ty}px) rotate(${ang * 180 / Math.PI}deg) skewY(${skew}deg)`;
   }
 
-  tick();
+  function antTick() {
+    if (fleeFrames > 0) { fleeFrames--; speed = 3; } else speed = baseSpeed;
 
-  // Keep within bounds if window resizes
-  window.addEventListener('resize', () => {
-    x = Math.min(x, window.innerWidth  - 20);
-    y = Math.min(y, window.innerHeight - 20);
+    if (pauseLeft > 0 && fleeFrames === 0) {
+      pauseLeft--;
+      placeAnt(ax, ay, angle + Math.sin(Date.now() / 75) * 0.03, 0);
+      requestAnimationFrame(antTick); return;
+    }
+    if (fleeFrames === 0 && Math.random() < .004) {
+      pauseLeft = 45 + Math.floor(Math.random() * 90);
+      requestAnimationFrame(antTick); return;
+    }
+
+    angle += (Math.random() - .5) * .08;
+    if (--turnTimer <= 0) { angle += (Math.random() - .5) * 1.1; turnTimer = 90 + Math.floor(Math.random() * 130); }
+
+    ax += Math.cos(angle) * speed;
+    ay += Math.sin(angle) * speed;
+    const pad = 24;
+    if (ax < pad)         { angle = Math.PI - angle; ax = pad; }
+    if (ax > vpW - pad)   { angle = Math.PI - angle; ax = vpW - pad; }
+    if (ay < pad)         { angle = -angle; ay = pad; }
+    if (ay > vpH - pad)   { angle = -angle; ay = vpH - pad; }
+
+    legPhase += .38;
+    placeAnt(ax, ay, angle, Math.sin(legPhase) * 2);
+    requestAnimationFrame(antTick);
+  }
+  antTick();
+
+  /* ── Ant click → fireworks ── */
+  ant.addEventListener('click', () => { fleeFrames = 140; launchFireworks(); });
+
+  /* ─────────────── FIREWORKS ─────────────── */
+  function launchFireworks() {
+    const cvs = document.createElement('canvas');
+    cvs.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:99995;';
+    cvs.width = innerWidth; cvs.height = innerHeight;
+    document.body.appendChild(cvs);
+    const ctx = cvs.getContext('2d');
+    const C = ['#1a6cf5','#ff5e00','#ffd000','#00ccff','#ff0080','#7c3aed','#25D366','#ffffff','#ff4444','#ffaa00'];
+
+    class Rocket {
+      constructor() {
+        this.x = innerWidth * (.1 + Math.random() * .8); this.y = innerHeight + 5;
+        this.vy = -(9 + Math.random() * 5); this.vx = (Math.random() - .5) * 1.5;
+        this.color = C[Math.floor(Math.random() * C.length)];
+        this.trail = []; this.done = false;
+      }
+      update(sparks) {
+        this.trail.push({ x: this.x, y: this.y });
+        if (this.trail.length > 12) this.trail.shift();
+        this.x += this.vx; this.y += this.vy; this.vy += .18;
+        if (this.vy >= 0 && !this.done) {
+          this.done = true;
+          const n = 70 + Math.floor(Math.random() * 50);
+          for (let i = 0; i < n; i++) sparks.push(new Spark(this.x, this.y, this.color));
+          const c2 = C[Math.floor(Math.random() * C.length)];
+          for (let i = 0; i < 30; i++) sparks.push(new Spark(this.x, this.y, c2, .4));
+        }
+        return !this.done;
+      }
+      draw() {
+        for (let i = 0; i < this.trail.length; i++) {
+          ctx.globalAlpha = (i / this.trail.length) * .6;
+          ctx.fillStyle = this.color;
+          ctx.beginPath(); ctx.arc(this.trail[i].x, this.trail[i].y, 2.5, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = 1; ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI*2); ctx.fill();
+      }
+    }
+
+    class Spark {
+      constructor(x, y, color, sm = 1) {
+        this.x = x; this.y = y;
+        const a = Math.random() * Math.PI * 2, s = (1.5 + Math.random() * 6) * sm;
+        this.vx = Math.cos(a) * s; this.vy = Math.sin(a) * s;
+        this.color = Math.random() < .25 ? C[Math.floor(Math.random() * C.length)] : color;
+        this.life = 1; this.decay = .013 + Math.random() * .012;
+        this.size = 1.5 + Math.random() * 3; this.tail = [];
+      }
+      update() {
+        this.tail.push({ x: this.x, y: this.y });
+        if (this.tail.length > 5) this.tail.shift();
+        this.x += this.vx; this.y += this.vy; this.vy += .1; this.vx *= .98;
+        this.life -= this.decay; return this.life > 0;
+      }
+      draw() {
+        for (let i = 0; i < this.tail.length; i++) {
+          ctx.globalAlpha = (i / this.tail.length) * this.life * .5;
+          ctx.fillStyle = this.color;
+          ctx.beginPath(); ctx.arc(this.tail[i].x, this.tail[i].y, this.size * .6, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = this.life; ctx.fillStyle = this.color;
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI*2); ctx.fill();
+      }
+    }
+
+    const rockets = [], sparks = [];
+    [0,250,500,750,1000,1300,1600,1900,2200,2500,2800,3100,3400,3700].forEach(d => setTimeout(() => rockets.push(new Rocket()), d));
+    const start = performance.now();
+    (function loop() {
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
+      for (let i = rockets.length-1; i >= 0; i--) { if (!rockets[i].update(sparks)) rockets.splice(i,1); else rockets[i].draw(); }
+      for (let i = sparks.length-1;  i >= 0; i--) { if (!sparks[i].update())        sparks.splice(i,1);  else sparks[i].draw(); }
+      ctx.globalAlpha = 1;
+      if (performance.now() - start < 5500 || rockets.length || sparks.length) requestAnimationFrame(loop);
+      else cvs.remove();
+    })();
+  }
+
+  /* ─────────────── MOUSE CURSOR + TAIL ─────────────── */
+  if (!matchMedia('(pointer: fine)').matches) return;
+
+  /* Mouse SVG — facing right, nose (hotspot) at ~(28.5, 12.5) */
+  const mc = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  mc.id = 'mouse-cursor';
+  mc.setAttribute('viewBox', '-10 0 40 21');
+  mc.setAttribute('width', '40'); mc.setAttribute('height', '21');
+  mc.innerHTML = `
+    <path d="M2 11 Q-2 7 -6 10 Q-9 14.5 -7 17" fill="none" stroke="#c8a8a0" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="11" cy="11" rx="9"   ry="6.5" fill="#8a7468"/>
+    <circle  cx="22" cy="11.5" r="6.5" fill="#8a7468"/>
+    <ellipse cx="19.5" cy="4.5" rx="3.2" ry="2.8" fill="#aa8e87"/>
+    <ellipse cx="19.5" cy="4.5" rx="2"   ry="1.7" fill="#e8b8c0"/>
+    <ellipse cx="25"   cy="4"   rx="3"   ry="2.6" fill="#aa8e87"/>
+    <ellipse cx="25"   cy="4"   rx="1.8" ry="1.6" fill="#e8b8c0"/>
+    <circle  cx="23"   cy="10.5" r="2"   fill="#0d0805"/>
+    <circle  cx="22.3" cy="9.8"  r="0.7" fill="#ffffff"/>
+  `;
+  document.body.appendChild(mc);
+  const NOSE_X = 38.5, NOSE_Y = 11.5;  /* nose tip = cursor hotspot */
+
+  /* Tail dots */
+  const TAIL = 65;
+  const tailDots = [];
+  for (let i = 0; i < TAIL; i++) {
+    const d = document.createElement('div');
+    d.className = 'tail-dot';
+    const frac = 1 - i / TAIL;
+    d.style.opacity = (frac * 0.55).toFixed(3);
+    const sz = Math.max(1.5, frac * 6).toFixed(1);
+    d.style.width = d.style.height = sz + 'px';
+    document.body.appendChild(d);
+    tailDots.push(d);
+  }
+
+  const positions = Array.from({ length: TAIL }, () => ({ x: -300, y: -300 }));
+  let mx = -300, my = -300;
+  let lastMx = -300, lastMy = -300;
+  let targetAngle = 0, smoothAngle = 0;
+
+  document.addEventListener('mousemove', e => {
+    const dx = e.clientX - lastMx, dy = e.clientY - lastMy;
+    if (Math.abs(dx) + Math.abs(dy) > 1.5) targetAngle = Math.atan2(dy, dx) * 180 / Math.PI;
+    lastMx = mx = e.clientX; lastMy = my = e.clientY;
   });
+
+  /* Magnetic buttons */
+  const magnets = document.querySelectorAll('.soc-btn');
+  document.addEventListener('mousemove', e => {
+    magnets.forEach(el => {
+      const r  = el.getBoundingClientRect();
+      const cx = r.left + r.width/2, cy = r.top + r.height/2;
+      const dx = e.clientX - cx, dy = e.clientY - cy;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      el.style.transform = dist < 90 ? `translate(${dx*.28*(1-dist/90)}px,${dy*.28*(1-dist/90)}px)` : '';
+    });
+  });
+
+  function lerpAngle(a, b, t) {
+    let d = b - a;
+    while (d >  180) d -= 360;
+    while (d < -180) d += 360;
+    return a + d * t;
+  }
+
+  (function rafLoop() {
+    smoothAngle = lerpAngle(smoothAngle, targetAngle, 0.1);
+    mc.style.left            = (mx - NOSE_X) + 'px';
+    mc.style.top             = (my - NOSE_Y) + 'px';
+    mc.style.transformOrigin = NOSE_X + 'px ' + NOSE_Y + 'px';
+    mc.style.transform       = `rotate(${smoothAngle}deg)`;
+    positions.unshift({ x: mx, y: my });
+    positions.length = TAIL;
+    const SKIP = 6;
+    tailDots.forEach((d, i) => { const p = positions[Math.min(i + SKIP, positions.length - 1)]; d.style.left = p.x + 'px'; d.style.top = p.y + 'px'; });
+    requestAnimationFrame(rafLoop);
+  })();
+
 })();
 </script>
-
 </body>
 </html>
