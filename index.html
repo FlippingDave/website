@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlippingDave</title>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0c0c0c;
+      --surface: #161616;
+      --accent: #ff5e00;
+      --accent2: #ffd000;
+      --text: #f2f2f2;
+      --muted: #666;
+      --border: #222;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      cursor: default;
+    }
+
+    /* ── GRAIN OVERLAY ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* ── ANT ── */
+    #ant {
+      position: fixed;
+      width: 11px;
+      height: 7px;
+      pointer-events: none;
+      z-index: 9999;
+      transform-origin: 50% 50%;
+      will-change: transform, left, top;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 3rem 1.5rem 5rem;
+      position: relative;
+    }
+
+    /* animated gradient blob behind name */
+    .hero::before {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,94,0,0.12) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -60%);
+      pointer-events: none;
+      animation: pulse 6s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: translate(-50%, -60%) scale(1); opacity: 1; }
+      50% { transform: translate(-50%, -60%) scale(1.15); opacity: 0.6; }
+    }
+
+    .avatar-wrap {
+      position: relative;
+      margin-bottom: 2rem;
+    }
+
+    .avatar {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--accent);
+      display: block;
+      filter: grayscale(20%);
+      transition: filter 0.3s;
+    }
+    .avatar:hover { filter: grayscale(0%); }
+
+    /* spinning ring */
+    .avatar-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 2px dashed var(--accent);
+      opacity: 0.5;
+      animation: spin 18s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    h1 {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: clamp(3.5rem, 12vw, 9rem);
+      line-height: 0.92;
+      letter-spacing: -3px;
+      color: var(--text);
+      position: relative;
+      z-index: 1;
+      user-select: none;
+    }
+
+    h1 .flip { color: var(--accent); }
+    h1 .dave { color: var(--text); }
+
+    /* glitch flicker on hover */
+    h1:hover .flip {
+      animation: glitch 0.3s steps(2, end) 1;
+    }
+
+    @keyframes glitch {
+      0%   { text-shadow: 3px 0 #ff0080, -3px 0 #00ffff; }
+      25%  { text-shadow: -3px 0 #ff0080, 3px 0 #00ffff; }
+      50%  { text-shadow: 3px 2px #ff0080, -3px -2px #00ffff; }
+      75%  { text-shadow: -3px 0 #ff0080, 3px 0 #00ffff; }
+      100% { text-shadow: none; }
+    }
+
+    .tagline {
+      margin-top: 1.2rem;
+      font-size: 0.78rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--muted);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── SOCIALS ── */
+    .socials {
+      display: flex;
+      gap: 1.6rem;
+      margin-top: 2.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .socials a {
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s, transform 0.2s;
+      text-decoration: none;
+    }
+
+    .socials a:hover {
+      color: var(--accent);
+      transform: translateY(-3px) scale(1.2);
+    }
+
+    .socials svg { width: 20px; height: 20px; fill: currentColor; }
+
+    /* X logo text */
+    .x-logo {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    /* ── LINK BUTTONS ── */
+    .links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      margin-top: 3rem;
+      width: 100%;
+      max-width: 400px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .link-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 0.95rem 1.4rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 600;
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .link-btn::after {
+      content: '→';
+      margin-left: auto;
+      color: var(--muted);
+      transition: transform 0.2s, color 0.2s;
+    }
+
+    .link-btn:hover {
+      border-color: var(--accent);
+      background: #1c1c1c;
+      transform: translateX(5px);
+      box-shadow: -4px 0 0 var(--accent);
+    }
+
+    .link-btn:hover::after {
+      transform: translateX(4px);
+      color: var(--accent);
+    }
+
+    .link-icon {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+    }
+
+    footer span { color: var(--accent); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 480px) {
+      h1 { letter-spacing: -1px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ THE ANT ══ -->
+<!-- Life-sized ant: ~10–12px wide. Barely visible on purpose. -->
+<svg id="ant" viewBox="0 0 22 13" xmlns="http://www.w3.org/2000/svg">
+  <!-- abdomen -->
+  <ellipse cx="17.5" cy="6.5" rx="4" ry="3.2" fill="#111"/>
+  <!-- thorax -->
+  <ellipse cx="10.5" cy="6.5" rx="2.4" ry="1.9" fill="#111"/>
+  <!-- head -->
+  <ellipse cx="4.5" cy="6.5" rx="3" ry="2.3" fill="#111"/>
+  <!-- antennae -->
+  <line x1="2.5" y1="4.5" x2="0.2" y2="0.5" stroke="#111" stroke-width="0.7" stroke-linecap="round"/>
+  <line x1="4"   y1="4.2" x2="2.2" y2="0.3" stroke="#111" stroke-width="0.7" stroke-linecap="round"/>
+  <!-- antenna tips (tiny dots) -->
+  <circle cx="0.2" cy="0.5" r="0.6" fill="#111"/>
+  <circle cx="2.2" cy="0.3" r="0.6" fill="#111"/>
+  <!-- legs (3 per side, attached to thorax) -->
+  <line x1="9"  y1="5.5" x2="6"  y2="2.5" stroke="#111" stroke-width="0.65" stroke-linecap="round"/>
+  <line x1="9"  y1="7.5" x2="6"  y2="10.5" stroke="#111" stroke-width="0.65" stroke-linecap="round"/>
+  <line x1="10.5" y1="5" x2="9"  y2="1.5" stroke="#111" stroke-width="0.65" stroke-linecap="round"/>
+  <line x1="10.5" y1="8" x2="9"  y2="11.5" stroke="#111" stroke-width="0.65" stroke-linecap="round"/>
+  <line x1="12.5" y1="5.5" x2="14.5" y2="2.5" stroke="#111" stroke-width="0.65" stroke-linecap="round"/>
+  <line x1="12.5" y1="7.5" x2="14.5" y2="10.5" stroke="#111" stroke-width="0.65" stroke-linecap="round"/>
+  <!-- eye -->
+  <circle cx="3.2" cy="5.8" r="0.5" fill="#333"/>
+</svg>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+
+  <div class="avatar-wrap">
+    <!-- Tries to load avatar from Twitter/X; falls back gracefully -->
+    <img class="avatar"
+         src="https://unavatar.io/twitter/FlippingDave"
+         alt="FlippingDave"
+         onerror="this.src='https://api.dicebear.com/7.x/initials/svg?seed=FD&backgroundColor=ff5e00&textColor=ffffff'">
+  </div>
+
+  <h1><span class="flip">Flipping</span><br><span class="dave">Dave</span></h1>
+  <p class="tagline">Flip &nbsp;·&nbsp; Connect &nbsp;·&nbsp; Create</p>
+
+  <!-- Socials -->
+  <nav class="socials" aria-label="Social links">
+
+    <a href="https://x.com/FlippingDave" target="_blank" rel="noopener" title="X / Twitter">
+      <span class="x-logo">𝕏</span>
+    </a>
+
+    <a href="https://instagram.com/FlippingDave" target="_blank" rel="noopener" title="Instagram">
+      <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+    </a>
+
+    <a href="https://facebook.com/FlippingDave" target="_blank" rel="noopener" title="Facebook">
+      <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+    </a>
+
+    <a href="https://linkedin.com/in/FlippingDave" target="_blank" rel="noopener" title="LinkedIn">
+      <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+    </a>
+
+    <a href="https://wa.me/" target="_blank" rel="noopener" title="WhatsApp">
+      <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    </a>
+
+  </nav>
+
+  <!-- Link buttons -->
+  <div class="links">
+    <a class="link-btn" href="https://us04web.zoom.us/j/3858313619?pwd=VWxxT2J3VUVmM3drd1VuTmdXZDVmQT09" target="_blank" rel="noopener">
+      <span class="link-icon">📹</span> Jump on Zoom
+    </a>
+    <a class="link-btn" href="http://m.me/FlippingDave" target="_blank" rel="noopener">
+      <span class="link-icon">💬</span> Message on Messenger
+    </a>
+    <a class="link-btn" href="http://FlippingDave.com" target="_blank" rel="noopener">
+      <span class="link-icon">🌐</span> FlippingDave.com
+    </a>
+  </div>
+
+</section>
+
+<footer>
+  <p>© 2026 &nbsp;<span>FlippingDave</span> &nbsp;·&nbsp; Made with ☕ &amp; chaos</p>
+</footer>
+
+<!-- ══ ANT BRAIN ══ -->
+<script>
+(function() {
+  const ant = document.getElementById('ant');
+  if (!ant) return;
+
+  let x = window.innerWidth  * (0.2 + Math.random() * 0.6);
+  let y = window.innerHeight * (0.2 + Math.random() * 0.6);
+  let angle  = Math.random() * Math.PI * 2;
+  let speed  = 0.55;
+  let legPhase = 0;
+  let pauseFrames = 0;
+  let turnTimer = 0;
+
+  // Leg positions baked into the SVG lines — we animate by skewing
+  // which makes the legs appear to move in an alternating gait
+
+  function tick() {
+    if (pauseFrames > 0) {
+      // Ant stopped — antennae-wiggle via tiny wobble in place
+      pauseFrames--;
+      const deg = angle * (180 / Math.PI);
+      const wobble = Math.sin(Date.now() / 80) * 1.5;
+      ant.style.left = (x - 5.5) + 'px';
+      ant.style.top  = (y - 3.5) + 'px';
+      ant.style.transform = `rotate(${deg + wobble}deg)`;
+      requestAnimationFrame(tick);
+      return;
+    }
+
+    // Random pause (ant stops to "investigate")
+    if (Math.random() < 0.004) {
+      pauseFrames = 40 + Math.floor(Math.random() * 80);
+      requestAnimationFrame(tick);
+      return;
+    }
+
+    // Gentle random steering
+    angle += (Math.random() - 0.5) * 0.09;
+
+    // Sharper random turns (like an ant changing direction)
+    turnTimer--;
+    if (turnTimer <= 0) {
+      angle += (Math.random() - 0.5) * 1.0;
+      turnTimer = 80 + Math.floor(Math.random() * 120);
+    }
+
+    // Move
+    x += Math.cos(angle) * speed;
+    y += Math.sin(angle) * speed;
+
+    // Bounce at edges
+    const pad = 18;
+    if (x < pad)                    { angle = Math.PI - angle; x = pad; }
+    if (x > window.innerWidth - pad) { angle = Math.PI - angle; x = window.innerWidth - pad; }
+    if (y < pad)                    { angle = -angle; y = pad; }
+    if (y > window.innerHeight - pad){ angle = -angle; y = window.innerHeight - pad; }
+
+    // Leg animation: alternating skew mimics walking gait
+    legPhase += 0.35;
+    const skew = Math.sin(legPhase) * 1.8;
+
+    const deg = angle * (180 / Math.PI);
+    ant.style.left      = (x - 5.5) + 'px';
+    ant.style.top       = (y - 3.5) + 'px';
+    ant.style.transform = `rotate(${deg}deg) skewY(${skew}deg)`;
+
+    requestAnimationFrame(tick);
+  }
+
+  tick();
+
+  // Keep within bounds if window resizes
+  window.addEventListener('resize', () => {
+    x = Math.min(x, window.innerWidth  - 20);
+    y = Math.min(y, window.innerHeight - 20);
+  });
+})();
+</script>
+
+</body>
+</html>
