@@ -92,21 +92,22 @@
 
     /* ── PROFILE CARD ── */
     .profile-card {
-      background: var(--surface);
-      border-radius: 28px;
-      box-shadow: var(--shadow);
-      padding: 2.4rem 2rem 2rem;
       text-align: center;
       width: 100%; max-width: 400px;
     }
 
-    /* ── AVATAR — solid ring only, no spinning dashed ring ── */
-    .avatar-wrap { position: relative; display: inline-block; margin-bottom: 1.3rem; }
+    /* ── AVATAR BEHIND BUTTONS ── */
+    .socials-wrap { position: relative; margin-top: 1.2rem; }
 
-    .avatar {
-      width: 104px; height: 104px;
-      border-radius: 50%; object-fit: cover; display: block;
-      border: 3px solid var(--accent);
+    .avatar-bg {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px; height: 200px;
+      border-radius: 50%; object-fit: cover;
+      opacity: 0.75;
+      z-index: 0;
+      pointer-events: none;
     }
 
     /* ── HANDLE ── */
@@ -129,13 +130,13 @@
       66%  { text-shadow:  3px 2px #ff0080,-3px -2px #00ccff; }
       100% { text-shadow: none; }
     }
-    .divider { margin: 1.4rem 0; border: none; border-top: 1px solid var(--border); }
-
     /* ── SOCIALS — 3×3 grid ── */
     .socials {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: .7rem;
+      position: relative;
+      z-index: 1;
     }
 
     .soc-btn {
@@ -252,18 +253,15 @@
 <div class="page">
   <div class="profile-card">
 
-    <div class="avatar-wrap">
-      <img class="avatar"
+    <p class="handle">@FlippingDave</p>
+
+    <div class="socials-wrap">
+      <img class="avatar-bg"
            src="https://unavatar.io/twitter/FlippingDave"
            alt="FlippingDave"
            onerror="this.src='https://api.dicebear.com/7.x/initials/svg?seed=FD&backgroundColor=1a6cf5&textColor=ffffff'">
-    </div>
 
-    <p class="handle">@FlippingDave</p>
-
-    <hr class="divider">
-
-    <nav class="socials" aria-label="Social links">
+      <nav class="socials" aria-label="Social links">
 
       <a class="soc-btn" style="--bc:#000;--bs:rgba(0,0,0,.25)"
          href="https://x.com/FlippingDave" target="_blank" rel="noopener" title="X / Twitter">
@@ -292,7 +290,7 @@
 
       <a class="soc-btn" style="--bc:#2D8CFF;--bs:rgba(45,140,255,.35)"
          href="https://us04web.zoom.us/j/73093807327?pwd=vSsAMyIgKGZwbmNooQASMmBkPQWblx.1" target="_blank" rel="noopener" title="Zoom">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1.116 5.056A2.234 2.234 0 0 0 0 7.026v8.755a3.165 3.165 0 0 0 3.166 3.166h13.189a2.234 2.234 0 0 0 2.234-2.234V7.026a2.234 2.234 0 0 0-3.35-1.97L11.55 7.801V7.026A2.234 2.234 0 0 0 9.315 4.79H3.166a3.165 3.165 0 0 0-2.05.266zm13.743 2.56 4.045-2.527a.744.744 0 0 1 1.116.644v8.534a.744.744 0 0 1-1.116.644l-4.045-2.527V7.616z"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z"/></svg>
       </a>
 
       <a class="soc-btn" style="--bc:#0084FF;--bs:rgba(0,132,255,.35)"
@@ -320,7 +318,7 @@
 
       <a class="soc-btn" style="--bc:#ff4500;--bs:rgba(255,69,0,.35)"
          href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener" title="🔥 Hot">
-        <svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><path d="M12 2C9.62 2 7.5 3.12 6.11 4.88 5.42 5.76 5 6.84 5 8c0 2.21 1.79 4 4 4 .34 0 .67-.04.98-.12C9.38 13.13 9 14.51 9 16c0 3.31 2.69 6 6 6s6-2.69 6-6c0-1.49-.38-2.87-1.04-4.07A4.007 4.007 0 0 0 21 8c0-1.16-.42-2.24-1.11-3.12C18.5 3.12 16.38 2 14 2c-.66 0-1.3.1-1.9.27A5.98 5.98 0 0 0 12 2zm2 14c0 1.1-.9 2-2 2s-2-.9-2-2c0-.74.4-1.38 1-1.73V12.1c.32.06.65.1 1 .1s.68-.04 1-.1v2.17c.6.35 1 .99 1 1.73z"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><path d="M17.66 11.2c-.23-.3-.51-.56-.77-.82-.67-.6-1.43-1.03-2.07-1.66C13.33 7.26 13 4.85 13.95 3c-.95.23-1.78.75-2.49 1.32C8.87 6.4 7.85 10.07 9.07 13.22c.04.1.08.2.08.33 0 .22-.15.42-.35.5-.23.1-.47.04-.66-.12a.58.58 0 0 1-.14-.17C6.87 12.33 6.69 10.28 7.45 8.64 5.78 10 4.87 12.3 5 14.47c.06.5.12 1 .29 1.5.14.6.41 1.2.71 1.73C7.08 19.43 8.95 20.67 10.96 20.92c2.14.27 4.43-.12 6.07-1.6 1.83-1.66 2.47-4.32 1.53-6.6l-.13-.26c-.21-.42-.77-1.26-.77-1.26z"/></svg>
       </a>
 
       <a class="soc-btn" style="--bc:#F7931A;--bs:rgba(247,147,26,.35)"
@@ -350,7 +348,8 @@
         </div>
       </div>
 
-    </nav>
+      </nav>
+    </div>
   </div>
 </div>
 
@@ -546,6 +545,103 @@
       if (performance.now() - start < 5500 || rockets.length || sparks.length) requestAnimationFrame(loop);
       else cvs.remove();
     })();
+  }
+
+  /* ─────────────── MOBILE TILT + SHAKE ─────────────── */
+  if ('ontouchstart' in window) {
+    const socialsWrap = document.querySelector('.socials-wrap');
+    let tiltTarget = 0, tiltCurrent = 0;
+    let shaking = false;
+    let lastMag = 9.8;
+
+    function startMotion() {
+      window.addEventListener('deviceorientation', e => {
+        if (e.gamma == null) return;
+        tiltTarget = Math.max(-30, Math.min(30, e.gamma)) * 1.2;
+      });
+
+      window.addEventListener('devicemotion', e => {
+        if (shaking) return;
+        const a = e.accelerationIncludingGravity;
+        if (!a) return;
+        const mag = Math.sqrt((a.x||0)*(a.x||0) + (a.y||0)*(a.y||0) + (a.z||0)*(a.z||0));
+        const delta = Math.abs(mag - lastMag);
+        lastMag = mag;
+        if (delta > 18) triggerPile();
+      });
+
+      (function tiltLoop() {
+        tiltCurrent += (tiltTarget - tiltCurrent) * 0.12;
+        if (socialsWrap) socialsWrap.style.transform = `translateX(${tiltCurrent.toFixed(2)}px)`;
+        requestAnimationFrame(tiltLoop);
+      })();
+    }
+
+    if (typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      // iOS 13+ requires user gesture to grant motion permission
+      document.addEventListener('touchstart', function ask() {
+        DeviceOrientationEvent.requestPermission()
+          .then(r => { if (r === 'granted') startMotion(); })
+          .catch(() => {});
+        document.removeEventListener('touchstart', ask);
+      }, { once: true });
+    } else {
+      startMotion();
+    }
+
+    function triggerPile() {
+      shaking = true;
+      const btns = Array.from(document.querySelectorAll('.soc-btn'));
+      const particles = [];
+      const floor = window.innerHeight - 12;
+
+      btns.forEach(btn => {
+        const r = btn.getBoundingClientRect();
+        const ghost = btn.cloneNode(true);
+        // Override positioning — inline style beats class rules
+        ghost.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;margin:0;pointer-events:none;z-index:9990;transition:opacity 0.4s;box-sizing:border-box;`;
+        document.body.appendChild(ghost);
+        btn.style.opacity = '0';
+        particles.push({
+          el: ghost,
+          x: r.left, y: r.top, w: r.width, h: r.height,
+          vx: (Math.random() - 0.5) * 5,
+          vy: -(Math.random() * 2),
+          rot: 0, vrot: (Math.random() - 0.5) * 8
+        });
+      });
+
+      const g = 0.55, start = performance.now();
+      (function loop() {
+        particles.forEach(p => {
+          p.vy += g;
+          p.x += p.vx; p.y += p.vy;
+          p.rot += p.vrot;
+          if (p.y + p.h >= floor) {
+            p.y = floor - p.h;
+            p.vy *= -0.28;
+            p.vx *= 0.82;
+            p.vrot *= 0.65;
+          }
+          const ox = parseFloat(p.el.style.left);
+          const oy = parseFloat(p.el.style.top);
+          p.el.style.transform = `translate(${(p.x-ox).toFixed(1)}px,${(p.y-oy).toFixed(1)}px) rotate(${p.rot.toFixed(1)}deg)`;
+        });
+        if (performance.now() - start < 3000) {
+          requestAnimationFrame(loop);
+        } else {
+          // Fade ghosts out, restore originals
+          particles.forEach(p => { p.el.style.opacity = '0'; });
+          btns.forEach(btn => { btn.style.transition = 'opacity 0.4s'; btn.style.opacity = ''; });
+          setTimeout(() => {
+            particles.forEach(p => p.el.remove());
+            btns.forEach(btn => { btn.style.transition = ''; });
+            shaking = false;
+          }, 450);
+        }
+      })();
+    }
   }
 
   /* ─────────────── MOUSE CURSOR + TAIL ─────────────── */
