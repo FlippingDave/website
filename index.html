@@ -10,12 +10,12 @@
 
     :root {
       --bg:      #dbeeff;
-      --surface: #e0f2ff;
+      --surface: #eef6ff;
       --accent:  #1a6cf5;
-      --text:    #1c1917;
-      --sub:     #57534e;
-      --muted:   #a8a29e;
-      --border:  #cac4bc;
+      --text:    #1a2a3a;
+      --sub:     #4a6a82;
+      --muted:   #7a9ab8;
+      --border:  #b0cde0;
       --shadow:  0 2px 4px rgba(0,0,0,.05), 0 8px 28px rgba(0,0,0,.09);
     }
 
@@ -32,7 +32,7 @@
     /* ── GRAIN ── */
     body::after {
       content: ''; position: fixed; inset: 0;
-      pointer-events: none; z-index: 998; opacity: .028;
+      pointer-events: none; z-index: 998; opacity: .045;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
     }
 
@@ -41,7 +41,7 @@
       content: ''; position: fixed; top: -120px; left: 50%;
       transform: translateX(-50%);
       width: 700px; height: 420px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(26,108,245,.12) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(255,255,255,.18) 0%, transparent 70%);
       pointer-events: none; z-index: 0;
     }
 
@@ -60,7 +60,7 @@
       .tail-dot {
         position: fixed;
         border-radius: 50%;
-        background: #c8a090;
+        background: #90b8d0;
         transform: translate(-100%, -50%); /* right edge at cursor — dot stays behind nose */
         pointer-events: none;
         z-index: 99997;
@@ -143,11 +143,11 @@
       width: 100%;
       aspect-ratio: 1;
       border-radius: 18px;
-      background: var(--bg);
+      background: var(--surface);
       border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center;
       color: var(--sub); text-decoration: none;
-      transition: background 1.4s, border-color 1.4s, color 1.4s, box-shadow 1.4s, transform 1.4s;
+      transition: background 2s ease, border-color 2s ease, color 2s ease, box-shadow 2s ease, transform 2s ease;
       will-change: transform; position: relative;
     }
 
@@ -358,8 +358,8 @@
   'use strict';
 
   /* ─────────────── LIGHT SHOW ─────────────── */
-  const STEP = 550;  // ms between each button — next starts before previous finishes
-  const HOLD = 700;  // ms lit before fading back out
+  const STEP = 750;  // ms between each button — overlapping gentle cascade
+  const HOLD = 900;  // ms lit before fading back out
   function runLightShow() {
     const btns = Array.from(document.querySelectorAll('.soc-btn'));
     for (let i = btns.length - 1; i > 0; i--) {
