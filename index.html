@@ -594,53 +594,81 @@
       shaking = true;
       const btns = Array.from(document.querySelectorAll('.soc-btn'));
       const particles = [];
-      const floor = window.innerHeight - 12;
+      const floor = window.innerHeight - 14;
 
       btns.forEach(btn => {
         const r = btn.getBoundingClientRect();
         const ghost = btn.cloneNode(true);
-        // Override positioning — inline style beats class rules
-        ghost.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;margin:0;pointer-events:none;z-index:9990;transition:opacity 0.4s;box-sizing:border-box;`;
+        ghost.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;margin:0;pointer-events:none;z-index:9990;box-sizing:border-box;`;
         document.body.appendChild(ghost);
         btn.style.opacity = '0';
+        btn.style.pointerEvents = 'none';
         particles.push({
           el: ghost,
           x: r.left, y: r.top, w: r.width, h: r.height,
-          vx: (Math.random() - 0.5) * 5,
-          vy: -(Math.random() * 2),
-          rot: 0, vrot: (Math.random() - 0.5) * 8
+          ox: r.left, oy: r.top,
+          vx: (Math.random() - 0.5) * 2.5,   // half speed
+          vy: -(Math.random() * 1),            // half speed
+          rot: 0, vrot: (Math.random() - 0.5) * 4  // half speed
         });
       });
 
-      const g = 0.55, start = performance.now();
+      const g = 0.275; // half gravity
+      let rafId, done = false;
+
       (function loop() {
+        let anyMoving = false;
         particles.forEach(p => {
           p.vy += g;
           p.x += p.vx; p.y += p.vy;
           p.rot += p.vrot;
           if (p.y + p.h >= floor) {
             p.y = floor - p.h;
-            p.vy *= -0.28;
-            p.vx *= 0.82;
-            p.vrot *= 0.65;
+            p.vy *= -0.10;  // barely bounces — locks into visible pile
+            p.vx *= 0.70;
+            p.vrot *= 0.50;
           }
-          const ox = parseFloat(p.el.style.left);
-          const oy = parseFloat(p.el.style.top);
-          p.el.style.transform = `translate(${(p.x-ox).toFixed(1)}px,${(p.y-oy).toFixed(1)}px) rotate(${p.rot.toFixed(1)}deg)`;
+          if (Math.abs(p.vy) > 0.1 || Math.abs(p.vx) > 0.1 || p.y + p.h < floor - 1) anyMoving = true;
+          p.el.style.transform = `translate(${(p.x-p.ox).toFixed(1)}px,${(p.y-p.oy).toFixed(1)}px) rotate(${p.rot.toFixed(1)}deg)`;
         });
-        if (performance.now() - start < 3000) {
-          requestAnimationFrame(loop);
-        } else {
-          // Fade ghosts out, restore originals
-          particles.forEach(p => { p.el.style.opacity = '0'; });
-          btns.forEach(btn => { btn.style.transition = 'opacity 0.4s'; btn.style.opacity = ''; });
+        if (!done && anyMoving) rafId = requestAnimationFrame(loop);
+      })();
+
+      // Tap / click anywhere to send buttons back up in reverse
+      setTimeout(() => {
+        let resetting = false;
+        function doReset(e) {
+          if (resetting) return;
+          resetting = true;
+          e.preventDefault();
+          done = true;
+          if (rafId) cancelAnimationFrame(rafId);
+          // Stagger each button sliding back up to its original position
+          particles.forEach((p, i) => {
+            setTimeout(() => {
+              p.el.style.transition = 'transform 0.75s cubic-bezier(0.33, 0, 0.66, 1)';
+              p.el.style.transform = 'translate(0px,0px) rotate(0deg)';
+            }, i * 35);
+          });
+          const dur = particles.length * 35 + 750;
+          setTimeout(() => {
+            btns.forEach(btn => {
+              btn.style.transition = 'opacity 0.3s';
+              btn.style.opacity = '';
+              btn.style.pointerEvents = '';
+            });
+          }, dur - 200);
           setTimeout(() => {
             particles.forEach(p => p.el.remove());
             btns.forEach(btn => { btn.style.transition = ''; });
             shaking = false;
-          }, 450);
+          }, dur + 150);
+          document.removeEventListener('click', doReset);
+          document.removeEventListener('touchstart', doReset);
         }
-      })();
+        document.addEventListener('click', doReset);
+        document.addEventListener('touchstart', doReset);
+      }, 800); // delay avoids the shake gesture itself triggering reset
     }
   }
 
