@@ -147,7 +147,7 @@
       border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center;
       color: var(--sub); text-decoration: none;
-      transition: background .7s, border-color .7s, color .7s, box-shadow .7s, transform .7s;
+      transition: background 1.4s, border-color 1.4s, color 1.4s, box-shadow 1.4s, transform 1.4s;
       will-change: transform; position: relative;
     }
 
@@ -358,8 +358,8 @@
   'use strict';
 
   /* ─────────────── LIGHT SHOW ─────────────── */
-  const STEP = 1000; // ms between each button
-  const HOLD = 500;  // ms before fading back out (transition does the fade)
+  const STEP = 550;  // ms between each button — next starts before previous finishes
+  const HOLD = 700;  // ms lit before fading back out
   function runLightShow() {
     const btns = Array.from(document.querySelectorAll('.soc-btn'));
     for (let i = btns.length - 1; i > 0; i--) {
