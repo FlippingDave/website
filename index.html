@@ -358,8 +358,8 @@
   'use strict';
 
   /* ─────────────── LIGHT SHOW ─────────────── */
-  const STEP = 750;  // ms between each button — overlapping gentle cascade
-  const HOLD = 900;  // ms lit before fading back out
+  const STEP = 1500; // ms between each button — slow overlapping cascade
+  const HOLD = 1800; // ms lit before fading back out
   function runLightShow() {
     const btns = Array.from(document.querySelectorAll('.soc-btn'));
     for (let i = btns.length - 1; i > 0; i--) {
