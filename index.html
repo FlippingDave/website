@@ -4,6 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FlippingDave</title>
+
+  <!-- Open Graph — rich previews on socials, messengers, etc. -->
+  <meta property="og:title" content="FlippingDave">
+  <meta property="og:description" content="Links, socials & contact for FlippingDave">
+  <meta property="og:image" content="https://unavatar.io/twitter/FlippingDave">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="FlippingDave">
+  <meta name="twitter:description" content="Links, socials & contact for FlippingDave">
+  <meta name="twitter:image" content="https://unavatar.io/twitter/FlippingDave">
+
+  <!-- Favicon -->
+  <link rel="icon" href="https://unavatar.io/twitter/FlippingDave" type="image/jpeg">
+
+  <!-- Preload avatar — visual centrepiece, paint it early -->
+  <link rel="preload" href="https://unavatar.io/twitter/FlippingDave" as="image">
+
   <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -108,6 +125,12 @@
       opacity: 0.75;
       z-index: 0;
       pointer-events: none;
+      box-shadow: 0 0 0 0 rgba(26,108,245,0);
+      animation: avatarPulse 3.5s ease-in-out infinite;
+    }
+    @keyframes avatarPulse {
+      0%, 100% { box-shadow: 0 0 12px 3px rgba(26,108,245,.15); }
+      50%      { box-shadow: 0 0 28px 8px rgba(26,108,245,.35); }
     }
 
     /* ── HANDLE ── */
@@ -163,6 +186,25 @@
       background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
       border-color: #d6249f;
       box-shadow: 0 6px 20px rgba(214,36,159,.35);
+    }
+
+    /* Mobile touch feedback — press-and-hold glow */
+    @media (pointer: coarse) {
+      .soc-btn:active {
+        background: var(--bc, var(--accent));
+        border-color: var(--bc, var(--accent));
+        color: #fff;
+        box-shadow: 0 0 18px var(--bs, rgba(26,108,245,.45));
+        transform: scale(1.06);
+        transition: all .15s ease;
+      }
+      .soc-btn.insta:active {
+        background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+        border-color: #d6249f;
+        box-shadow: 0 0 18px rgba(214,36,159,.45);
+        transform: scale(1.06);
+        transition: all .15s ease;
+      }
     }
 
     .soc-btn svg  { width: 26px; height: 26px; }
