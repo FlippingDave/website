@@ -290,6 +290,20 @@
     }
     .qr-mode .soc-btn .qr-overlay { opacity: 1; }
 
+    .qr-logo {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 26px; height: 26px;
+      background: #fff;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 0 2px #fff;
+      color: var(--bc, var(--accent));
+    }
+    .qr-logo svg { width: 16px; height: 16px; fill: currentColor; }
+    .qr-logo .x-logo { font-size: .75rem; }
+
     /* QR focused — click one QR to expand it, others fade away */
     .qr-focused .soc-btn {
       opacity: 0 !important;
@@ -588,8 +602,16 @@
       const overlay = document.createElement('div');
       overlay.className = 'qr-overlay';
       const canvas = document.createElement('canvas');
-      QrCreator.render({ text: btn.href, radius: 0.3, ecLevel: 'M', size: 90, fill: '#1a2a3a', background: '#fff' }, canvas);
+      QrCreator.render({ text: btn.href, radius: 0.3, ecLevel: 'H', size: 90, fill: '#1a2a3a', background: '#fff' }, canvas);
       overlay.appendChild(canvas);
+      // Clone the button's icon as a centered logo on the QR
+      const icon = btn.querySelector('svg, .x-logo');
+      if (icon) {
+        const logo = document.createElement('div');
+        logo.className = 'qr-logo';
+        logo.appendChild(icon.cloneNode(true));
+        overlay.appendChild(logo);
+      }
       btn.appendChild(overlay);
     });
   }
