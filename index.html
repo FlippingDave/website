@@ -142,6 +142,10 @@
       cursor: default; user-select: none;
       transition: color .2s, letter-spacing .2s;
     }
+    .handle.revealed {
+      opacity: 1; transform: translateY(0);
+      transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    }
     .handle:hover {
       color: var(--accent);
       letter-spacing: .06em;
@@ -172,6 +176,10 @@
       color: var(--sub); text-decoration: none;
       transition: background 2s ease, border-color 2s ease, color 2s ease, box-shadow 2s ease, transform 2s ease;
       will-change: transform; position: relative;
+    }
+    .soc-btn.dropped {
+      opacity: 1; transform: translateY(0);
+      transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
     }
 
     .soc-btn:hover {
@@ -255,6 +263,30 @@
       border-color: transparent !important;
       box-shadow: 0 0 22px rgba(214,36,159,.5), 0 6px 20px rgba(214,36,159,.35) !important;
     }
+
+    /* ── EXPLODE GHOST ── */
+    .explode-ghost.spring-back {
+      transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* ── QR CODES ── */
+    .qr-toggle {
+      display: block; margin: 1.2rem auto 0; padding: 8px 16px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; color: var(--sub); cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      font-family: 'Inter', sans-serif; font-size: .85rem; font-weight: 500;
+    }
+    .qr-toggle:hover, .qr-toggle.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .soc-btn .qr-overlay {
+      position: absolute; inset: 4px;
+      display: flex; align-items: center; justify-content: center;
+      background: #fff; border-radius: 14px;
+      opacity: 0; transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .qr-mode .soc-btn .qr-overlay { opacity: 1; }
   </style>
 </head>
 <body>
@@ -392,12 +424,55 @@
 
       </nav>
     </div>
+
+    <button id="qr-toggle" class="qr-toggle" title="Show QR codes">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style="vertical-align:middle;margin-right:4px"><path d="M3 11h2v2H3zm0-4h2v2H3zm4 4h2v2H7zM7 3h2v2H7zm4 0h2v2h-2zm4 8h2v2h-2zm0-4h2v2h-2zm0-4h2v2h-2zm4 8h2v2h-2zM3 15h8v8H3zm2 2v4h4v-4zM13 3h8v8h-8zm2 2v4h4V5zM3 3h8v8H3zm2 2v4h4V5zm8 8h8v8h-8zm2 2v4h4v-4z"/></svg>QR Codes
+    </button>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/qr-creator@1.0.0/dist/qr-creator.min.js"></script>
 <script>
 (function () {
   'use strict';
+
+  /* ─────────────── SHARED STATE ─────────────── */
+  let droppingIn = true;
+  let exploding = false;
+  let qrMode = false;
+  let shaking = false;
+
+  /* ─────────────── DROP-IN ANIMATION ─────────────── */
+  const handleEl = document.querySelector('.handle');
+  const allBtns = Array.from(document.querySelectorAll('.soc-btn'));
+  const DROP_STAGGER = 90;
+
+  // Hide everything via inline styles (CSS stays visible as fallback)
+  handleEl.style.opacity = '0';
+  handleEl.style.transform = 'translateY(-15px)';
+  allBtns.forEach(btn => {
+    btn.style.opacity = '0';
+    btn.style.transform = 'translateY(-30px)';
+  });
+
+  setTimeout(() => handleEl.classList.add('revealed'), 150);
+  allBtns.forEach((btn, i) => {
+    setTimeout(() => btn.classList.add('dropped'), 500 + i * DROP_STAGGER);
+  });
+  const totalDropTime = 500 + allBtns.length * DROP_STAGGER + 600;
+  setTimeout(() => {
+    // Clear inline styles + animation classes → buttons revert to CSS defaults (visible)
+    handleEl.classList.remove('revealed');
+    handleEl.style.opacity = '';
+    handleEl.style.transform = '';
+    allBtns.forEach(btn => {
+      btn.classList.remove('dropped');
+      btn.style.opacity = '';
+      btn.style.transform = '';
+    });
+    droppingIn = false;
+    runLightShow();
+  }, totalDropTime);
 
   /* ─────────────── LIGHT SHOW ─────────────── */
   const STEP = 1500; // ms between each button — slow overlapping cascade
@@ -414,9 +489,9 @@
         setTimeout(() => btn.classList.remove('lit'), HOLD);
       }, i * STEP);
     });
-    setTimeout(runLightShow, btns.length * STEP); // next round starts immediately
+    setTimeout(runLightShow, btns.length * STEP);
   }
-  runLightShow();
+  // Note: runLightShow() is called by the drop-in timer above, not here
 
   /* ─────────────── SHARE ─────────────── */
   const shareBtn  = document.getElementById('share-btn');
@@ -434,6 +509,106 @@
       copyLabel.textContent = '✓ Copied!';
       setTimeout(() => { copyLabel.textContent = 'Copy link'; }, 1500);
     });
+  });
+
+  /* ─────────────── EXPLODE ON CLICK ─────────────── */
+  document.querySelector('.socials').addEventListener('click', e => {
+    const clicked = e.target.closest('.soc-btn');
+    if (!clicked || exploding || shaking || droppingIn || qrMode) return;
+    // Don't explode if share button toggling its menu
+    if (clicked.id === 'share-btn') return;
+    exploding = true;
+
+    // Clear any magnetic transforms before capturing positions
+    allBtns.forEach(b => { b.style.transform = ''; });
+
+    const cr = clicked.getBoundingClientRect();
+    const cx = cr.left + cr.width / 2, cy = cr.top + cr.height / 2;
+    const ghosts = [];
+
+    allBtns.forEach(btn => {
+      if (btn === clicked) return;
+      const r = btn.getBoundingClientRect();
+      const bx = r.left + r.width / 2, by = r.top + r.height / 2;
+      const angle = Math.atan2(by - cy, bx - cx);
+      const dist = 130 + Math.random() * 50;
+      const dx = Math.cos(angle) * dist, dy = Math.sin(angle) * dist;
+
+      const ghost = btn.cloneNode(true);
+      ghost.className += ' explode-ghost';
+      ghost.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;margin:0;pointer-events:none;z-index:9990;box-sizing:border-box;transition:none;`;
+      ghost.style.transform = `translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px) scale(0.85)`;
+      document.body.appendChild(ghost);
+      btn.style.opacity = '0';
+      ghosts.push({ el: ghost, btn });
+    });
+
+    // Pulse the clicked button
+    clicked.style.transition = 'transform 0.15s ease';
+    clicked.style.transform = 'scale(1.15)';
+    setTimeout(() => { clicked.style.transform = ''; clicked.style.transition = ''; }, 200);
+
+    // Spring back after a beat
+    requestAnimationFrame(() => {
+      ghosts.forEach(g => {
+        g.el.classList.add('spring-back');
+        g.el.style.transform = 'translate(0,0) scale(1)';
+      });
+    });
+
+    setTimeout(() => {
+      ghosts.forEach(g => { g.el.remove(); g.btn.style.opacity = ''; });
+      exploding = false;
+    }, 750);
+  });
+
+  /* ─────────────── QR CODES ─────────────── */
+  const qrToggle = document.getElementById('qr-toggle');
+
+  // Generate QR overlays for each button with an href
+  if (typeof QrCreator !== 'undefined') {
+    document.querySelectorAll('.soc-btn[href]').forEach(btn => {
+      const overlay = document.createElement('div');
+      overlay.className = 'qr-overlay';
+      const canvas = document.createElement('canvas');
+      QrCreator.render({ text: btn.href, radius: 0.3, ecLevel: 'M', size: 90, fill: '#1a2a3a', background: '#fff' }, canvas);
+      overlay.appendChild(canvas);
+      btn.appendChild(overlay);
+    });
+  }
+
+  // Toggle all QR codes
+  qrToggle.addEventListener('click', e => {
+    e.stopPropagation();
+    qrMode = !qrMode;
+    document.querySelector('.socials').classList.toggle('qr-mode', qrMode);
+    qrToggle.classList.toggle('active', qrMode);
+  });
+
+  // Long-press individual button → show just that QR
+  let lpTimer = null;
+  document.querySelector('.socials').addEventListener('pointerdown', e => {
+    const btn = e.target.closest('.soc-btn');
+    if (!btn || qrMode) return;
+    lpTimer = setTimeout(() => {
+      const overlay = btn.querySelector('.qr-overlay');
+      if (!overlay) return;
+      overlay.style.opacity = '1';
+      e.preventDefault();
+      function hide() { overlay.style.opacity = ''; }
+      btn.addEventListener('pointerup', hide, { once: true });
+      btn.addEventListener('pointercancel', hide, { once: true });
+    }, 600);
+  });
+  document.querySelector('.socials').addEventListener('pointerup', () => clearTimeout(lpTimer));
+  document.querySelector('.socials').addEventListener('pointercancel', () => clearTimeout(lpTimer));
+
+  /* ─────────────── CLICK TRACKING ─────────────── */
+  document.querySelector('.socials').addEventListener('click', e => {
+    const btn = e.target.closest('.soc-btn');
+    if (!btn) return;
+    const name = btn.getAttribute('title') || 'unknown';
+    try { navigator.sendBeacon('/api/click', JSON.stringify({ button: name })); } catch {}
   });
 
   /* ─────────────── ANT ─────────────── */
@@ -593,7 +768,7 @@
   if ('ontouchstart' in window) {
     const socialsWrap = document.querySelector('.socials-wrap');
     let tiltTarget = 0, tiltCurrent = 0;
-    let shaking = false;
+    // shaking flag hoisted to shared state above
     let lastMag = 9.8;
 
     function startMotion() {
@@ -795,5 +970,10 @@
 
 })();
 </script>
+
+<!-- Cloudflare Web Analytics — replace YOUR_TOKEN_HERE with your beacon token from:
+     Cloudflare Dashboard → Analytics & Logs → Web Analytics → Add Site -->
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js'
+        data-cf-beacon='{"token": "YOUR_TOKEN_HERE"}'></script>
 </body>
 </html>
