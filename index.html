@@ -142,9 +142,10 @@
       cursor: default; user-select: none;
       transition: color .2s, letter-spacing .2s;
     }
+    .handle.drop-hidden { opacity: 0; transform: translateY(-15px); }
     .handle.revealed {
       opacity: 1; transform: translateY(0);
-      transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+      transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .handle:hover {
       color: var(--accent);
@@ -177,9 +178,10 @@
       transition: background 2s ease, border-color 2s ease, color 2s ease, box-shadow 2s ease, transform 2s ease;
       will-change: transform; position: relative;
     }
+    .soc-btn.drop-hidden { opacity: 0; transform: translateY(-30px); }
     .soc-btn.dropped {
       opacity: 1; transform: translateY(0);
-      transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+      transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     .soc-btn:hover {
@@ -287,6 +289,21 @@
       pointer-events: none;
     }
     .qr-mode .soc-btn .qr-overlay { opacity: 1; }
+
+    /* QR focused — click one QR to expand it, others fade away */
+    .qr-focused .soc-btn {
+      opacity: 0 !important;
+      transform: scale(0.5) !important;
+      transition: opacity 0.35s ease, transform 0.35s ease !important;
+      pointer-events: none;
+    }
+    .qr-focused .soc-btn.qr-active {
+      opacity: 1 !important;
+      transform: scale(1.9) !important;
+      z-index: 100;
+      pointer-events: auto;
+      transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    }
   </style>
 </head>
 <body>
@@ -447,32 +464,32 @@
   const allBtns = Array.from(document.querySelectorAll('.soc-btn'));
   const DROP_STAGGER = 90;
 
-  // Hide everything via inline styles (CSS stays visible as fallback)
-  handleEl.style.opacity = '0';
-  handleEl.style.transform = 'translateY(-15px)';
-  allBtns.forEach(btn => {
-    btn.style.opacity = '0';
-    btn.style.transform = 'translateY(-30px)';
-  });
+  // Hide via CSS class (no inline styles — clean cascade)
+  handleEl.classList.add('drop-hidden');
+  allBtns.forEach(btn => btn.classList.add('drop-hidden'));
 
-  setTimeout(() => handleEl.classList.add('revealed'), 150);
-  allBtns.forEach((btn, i) => {
-    setTimeout(() => btn.classList.add('dropped'), 500 + i * DROP_STAGGER);
-  });
-  const totalDropTime = 500 + allBtns.length * DROP_STAGGER + 600;
-  setTimeout(() => {
-    // Clear inline styles + animation classes → buttons revert to CSS defaults (visible)
-    handleEl.classList.remove('revealed');
-    handleEl.style.opacity = '';
-    handleEl.style.transform = '';
-    allBtns.forEach(btn => {
-      btn.classList.remove('dropped');
-      btn.style.opacity = '';
-      btn.style.transform = '';
+  // Double-rAF ensures browser paints hidden state before transitions fire
+  requestAnimationFrame(() => { requestAnimationFrame(() => {
+    setTimeout(() => {
+      handleEl.classList.remove('drop-hidden');
+      handleEl.classList.add('revealed');
+    }, 150);
+
+    allBtns.forEach((btn, i) => {
+      setTimeout(() => {
+        btn.classList.remove('drop-hidden');
+        btn.classList.add('dropped');
+      }, 500 + i * DROP_STAGGER);
     });
-    droppingIn = false;
-    runLightShow();
-  }, totalDropTime);
+
+    const totalDropTime = 500 + allBtns.length * DROP_STAGGER + 600;
+    setTimeout(() => {
+      handleEl.classList.remove('revealed');
+      allBtns.forEach(btn => btn.classList.remove('dropped'));
+      droppingIn = false;
+      runLightShow();
+    }, totalDropTime);
+  }); });
 
   /* ─────────────── LIGHT SHOW ─────────────── */
   const STEP = 1500; // ms between each button — slow overlapping cascade
@@ -581,8 +598,14 @@
   qrToggle.addEventListener('click', e => {
     e.stopPropagation();
     qrMode = !qrMode;
-    document.querySelector('.socials').classList.toggle('qr-mode', qrMode);
+    const sNav = document.querySelector('.socials');
+    sNav.classList.toggle('qr-mode', qrMode);
     qrToggle.classList.toggle('active', qrMode);
+    // Clear focus state when toggling off
+    if (!qrMode) {
+      sNav.classList.remove('qr-focused');
+      sNav.querySelectorAll('.qr-active').forEach(b => b.classList.remove('qr-active'));
+    }
   });
 
   // Long-press individual button → show just that QR
@@ -602,6 +625,28 @@
   });
   document.querySelector('.socials').addEventListener('pointerup', () => clearTimeout(lpTimer));
   document.querySelector('.socials').addEventListener('pointercancel', () => clearTimeout(lpTimer));
+
+  // QR focus — click a button in QR mode to expand it, others hide
+  const socialsNav = document.querySelector('.socials');
+  socialsNav.addEventListener('click', e => {
+    if (!qrMode) return;
+    const btn = e.target.closest('.soc-btn');
+
+    // If already focused, click anywhere to unfocus
+    if (socialsNav.classList.contains('qr-focused')) {
+      socialsNav.classList.remove('qr-focused');
+      socialsNav.querySelectorAll('.qr-active').forEach(b => b.classList.remove('qr-active'));
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    socialsNav.classList.add('qr-focused');
+    btn.classList.add('qr-active');
+  });
 
   /* ─────────────── CLICK TRACKING ─────────────── */
   document.querySelector('.socials').addEventListener('click', e => {
