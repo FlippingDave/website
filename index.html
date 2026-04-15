@@ -266,9 +266,13 @@
       box-shadow: 0 0 22px rgba(214,36,159,.5), 0 6px 20px rgba(214,36,159,.35) !important;
     }
 
-    /* ── EXPLODE GHOST ── */
-    .explode-ghost.spring-back {
-      transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* ── HERO EXPAND (page-transition overlay) ── */
+    .hero-expand {
+      position: fixed;
+      border-radius: 18px;
+      z-index: 9994;
+      pointer-events: none;
+      transition: none;
     }
 
     /* ── QR CODES ── */
@@ -546,51 +550,73 @@
   document.querySelector('.socials').addEventListener('click', e => {
     const clicked = e.target.closest('.soc-btn');
     if (!clicked || exploding || shaking || droppingIn || qrMode) return;
-    // Don't explode if share button toggling its menu
     if (clicked.id === 'share-btn') return;
-    exploding = true;
 
-    // Clear any magnetic transforms before capturing positions
+    const href = clicked.getAttribute('href');
+    if (!href) return;
+
+    exploding = true;
+    e.preventDefault();
+
     allBtns.forEach(b => { b.style.transform = ''; });
 
     const cr = clicked.getBoundingClientRect();
     const cx = cr.left + cr.width / 2, cy = cr.top + cr.height / 2;
     const ghosts = [];
 
+    // Blast every other button off-screen
     allBtns.forEach(btn => {
       if (btn === clicked) return;
       const r = btn.getBoundingClientRect();
       const bx = r.left + r.width / 2, by = r.top + r.height / 2;
-      const angle = Math.atan2(by - cy, bx - cx);
-      const dist = 130 + Math.random() * 50;
-      const dx = Math.cos(angle) * dist, dy = Math.sin(angle) * dist;
+      // Angle radiating away from the clicked button, plus a random wobble
+      const angle = Math.atan2(by - cy, bx - cx) + (Math.random() - 0.5) * 0.5;
+      const dist  = 650 + Math.random() * 350;
+      const dx    = Math.cos(angle) * dist;
+      const dy    = Math.sin(angle) * dist;
+      const rot   = (Math.random() - 0.5) * 130;
+      // Small random delay so they don't all launch at the exact same frame
+      const stagger = Math.random() * 55;
 
       const ghost = btn.cloneNode(true);
-      ghost.className += ' explode-ghost';
-      ghost.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;margin:0;pointer-events:none;z-index:9990;box-sizing:border-box;transition:none;`;
-      ghost.style.transform = `translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px) scale(0.85)`;
+      ghost.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;margin:0;pointer-events:none;z-index:9990;box-sizing:border-box;transition:none;opacity:1;`;
       document.body.appendChild(ghost);
-      btn.style.opacity = '0';
-      ghosts.push({ el: ghost, btn });
+      btn.style.visibility = 'hidden';
+      ghosts.push({ ghost, btn });
+
+      setTimeout(() => {
+        // Fast initial burst, fade starts only after 150ms so they're visible mid-flight
+        ghost.style.transition = 'transform 0.55s cubic-bezier(0.15,0,0.65,0.85), opacity 0.35s ease 0.15s';
+        ghost.style.transform  = `translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px) rotate(${rot.toFixed(1)}deg) scale(0.1)`;
+        ghost.style.opacity    = '0';
+      }, stagger);
     });
 
-    // Pulse the clicked button
-    clicked.style.transition = 'transform 0.15s ease';
-    clicked.style.transform = 'scale(1.15)';
-    setTimeout(() => { clicked.style.transform = ''; clicked.style.transition = ''; }, 200);
+    // Clicked button: sharp pop + colour glow, stays visible throughout
+    const isInsta = clicked.classList.contains('insta');
+    const glowColor = isInsta ? 'rgba(214,36,159,.7)' : (clicked.style.getPropertyValue('--bs').trim() || 'rgba(26,108,245,.6)');
+    clicked.style.transition = 'transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease';
+    clicked.style.transform  = 'scale(1.18)';
+    clicked.style.boxShadow  = `0 0 0 4px #fff, 0 0 32px 10px ${glowColor}`;
 
-    // Spring back after a beat
-    requestAnimationFrame(() => {
-      ghosts.forEach(g => {
-        g.el.classList.add('spring-back');
-        g.el.style.transform = 'translate(0,0) scale(1)';
-      });
-    });
-
+    // After the explosions are clearly visible, open the link
+    const isExternal = clicked.getAttribute('target') === '_blank';
     setTimeout(() => {
-      ghosts.forEach(g => { g.el.remove(); g.btn.style.opacity = ''; });
-      exploding = false;
-    }, 750);
+      if (isExternal) {
+        window.open(href, '_blank', 'noopener,noreferrer');
+      } else {
+        location.href = href;
+      }
+      // Reset clicked button style
+      clicked.style.transform  = '';
+      clicked.style.boxShadow  = '';
+      clicked.style.transition = '';
+      // Restore all real buttons and remove ghosts
+      setTimeout(() => {
+        ghosts.forEach(({ ghost, btn }) => { ghost.remove(); btn.style.visibility = ''; });
+        exploding = false;
+      }, 300);
+    }, 650);
   });
 
   /* ─────────────── QR CODES ─────────────── */
