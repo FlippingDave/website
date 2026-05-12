@@ -739,6 +739,7 @@
   // QR focus — click a button in QR mode to expand it, others hide
   const socialsNav = document.querySelector('.socials');
   socialsNav.addEventListener('click', e => {
+    if (e.target.closest('[data-no-nav]')) return; // ignore party invite btn
     if (!qrMode) return;
     const btn = e.target.closest('.soc-btn');
 
@@ -1138,7 +1139,9 @@
     partyBtn.addEventListener('click', e => {
       e.stopPropagation();
       partyOverlay.classList.add('open');
-    });
+    }, true); // capture phase — fires before socialsNav handler
+    // Also mark this button so the nav handler ignores it
+    partyBtn.dataset.noNav = '1';
   }
   if (partyClose && partyOverlay) {
     partyClose.addEventListener('click', () => partyOverlay.classList.remove('open'));
