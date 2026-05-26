@@ -1,620 +1,517 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FlippingDave</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Black+Han+Sans&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/qr-creator/dist/qr-creator.min.js"></script>
-<style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-:root {
-  --bg: #dbeeff;
-  --surface: #eef6ff;
-  --accent: #1a6cf5;
-  --text: #1a2a3a;
-  --sub: #4a6a82;
-  --muted: #7a9ab8;
-  --border: #b0cde0;
-  --shadow: 0 2px 4px rgba(0,0,0,.05), 0 8px 28px rgba(0,0,0,.09);
-}
-html { scroll-behavior: smooth; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Inter', sans-serif;
-  min-height: 100vh;
-  position: relative;
-}
-/* ── GRAIN ── */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 998;
-  opacity: .045;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-/* ── TOP GLOW ── */
-body::before {
-  content: '';
-  position: fixed;
-  top: -120px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 700px;
-  height: 420px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,.18) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-}
-/* ── MOUSE CURSOR + TAIL (desktop only) ── */
-@media (pointer: fine) {
-  body, a, button { cursor: none; }
-  #mouse-cursor {
-    position: fixed;
-    pointer-events: none;
-    z-index: 99999;
-    width: 40px;
-    height: 21px;
-    overflow: visible;
-  }
-  .tail-dot {
-    position: fixed;
-    border-radius: 50%;
-    background: #90b8d0;
-    transform: translate(-100%, -50%);
-    pointer-events: none;
-    z-index: 99997;
-  }
-}
-/* ── ANT ── */
-#ant {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 2.5mm;
-  height: 1.5mm;
-  pointer-events: all;
-  z-index: 9999;
-  overflow: hidden;
-}
-/* ════════════════════════════════ PAGE LAYOUT ════════════════════════════════ */
-.page {
-  position: relative;
-  z-index: 1;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2.5rem 1.2rem;
-}
-/* ── PROFILE CARD ── */
-.profile-card {
-  text-align: center;
-  width: 100%;
-  max-width: 400px;
-}
-/* ── AVATAR BEHIND BUTTONS ── */
-.socials-wrap {
-  position: relative;
-  margin-top: 1.2rem;
-}
-.avatar-bg {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  object-fit: cover;
-  opacity: 0.75;
-  z-index: 0;
-  pointer-events: none;
-  box-shadow: 0 0 0 0 rgba(26,108,245,0);
-  animation: avatarPulse 3.5s ease-in-out infinite;
-}
-@keyframes avatarPulse {
-  0%, 100% { box-shadow: 0 0 12px 3px rgba(26,108,245,.15); }
-  50%       { box-shadow: 0 0 28px 8px rgba(26,108,245,.35); }
-}
-/* ── HANDLE ── */
-.handle {
-  margin-top: .6rem;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--muted);
-  display: inline-block;
-  cursor: default;
-  user-select: none;
-  transition: color .2s, letter-spacing .2s;
-}
-.handle.drop-hidden  { opacity: 0; transform: translateY(-15px); }
-.handle.revealed     { opacity: 1; transform: translateY(0); transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.handle:hover        { color: var(--accent); letter-spacing: .06em; animation: glitch .35s steps(2,end) 1; }
-@keyframes glitch {
-  0%   { text-shadow:  3px 0 #ff0080,-3px 0 #00ccff; }
-  33%  { text-shadow: -3px 0 #ff0080, 3px 0 #00ccff; }
-  66%  { text-shadow:  3px 2px #ff0080,-3px -2px #00ccff; }
-  100% { text-shadow: none; }
-}
-/* ── SOCIALS — 3×3 grid ── */
-.socials {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: .7rem;
-  position: relative;
-  z-index: 1;
-}
-.soc-btn {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 18px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--sub);
-  text-decoration: none;
-  transition: background 2s ease, border-color 2s ease, color 2s ease, box-shadow 2s ease, transform 2s ease;
-  will-change: transform;
-  position: relative;
-}
-.soc-btn.drop-hidden { opacity: 0; transform: translateY(-30px); }
-.soc-btn.dropped     { opacity: 1; transform: translateY(0); transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.soc-btn:hover {
-  background: var(--bc, var(--accent));
-  border-color: var(--bc, var(--accent));
-  color: #fff;
-  box-shadow: 0 6px 20px var(--bs, rgba(26,108,245,.32));
-}
-/* Instagram gradient */
-.soc-btn.insta:hover {
-  background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
-  border-color: #d6249f;
-  box-shadow: 0 6px 20px rgba(214,36,159,.35);
-}
-/* Mobile touch feedback */
-@media (pointer: coarse) {
-  .soc-btn:active {
-    background: var(--bc, var(--accent));
-    border-color: var(--bc, var(--accent));
-    color: #fff;
-    box-shadow: 0 0 18px var(--bs, rgba(26,108,245,.45));
-    transform: scale(1.06);
-    transition: all .15s ease;
-  }
-  .soc-btn.insta:active {
-    background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
-    border-color: #d6249f;
-    box-shadow: 0 0 18px rgba(214,36,159,.45);
-    transform: scale(1.06);
-    transition: all .15s ease;
-  }
-}
-.soc-btn svg { width: 26px; height: 26px; }
-.x-logo { font-family: 'Black Han Sans', sans-serif; font-size: 1.3rem; line-height: 1; }
-/* Share dropdown */
-.soc-wrap { position: relative; }
-.share-menu {
-  position: absolute;
-  bottom: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow: 0 8px 30px rgba(0,0,0,.13);
-  padding: .55rem;
-  min-width: 195px;
-  z-index: 200;
-  display: none;
-  flex-direction: column;
-  gap: .2rem;
-  white-space: nowrap;
-}
-.share-menu.open { display: flex; }
-.share-item {
-  display: flex;
-  align-items: center;
-  gap: .7rem;
-  padding: .6rem .85rem;
-  border-radius: 10px;
-  text-decoration: none;
-  color: var(--text);
-  font-size: .85rem;
-  font-weight: 500;
-  transition: background .15s;
-  border: none;
-  background: none;
-  text-align: left;
-  width: 100%;
-}
-.share-item:hover { background: var(--bg); color: var(--accent); }
-.share-item svg { width: 15px; height: 15px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.si { font-size: .9rem; flex-shrink: 0; line-height: 1; }
-/* ── LIGHT-UP ── */
-.soc-btn.lit {
-  background: var(--bc, var(--accent)) !important;
-  border-color: transparent !important;
-  color: #fff !important;
-  box-shadow: 0 0 22px var(--bs, rgba(26,108,245,.5)), 0 6px 20px var(--bs, rgba(26,108,245,.32)) !important;
-  transform: scale(1.08) !important;
-}
-.soc-btn.insta.lit {
-  background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%) !important;
-  border-color: transparent !important;
-  box-shadow: 0 0 22px rgba(214,36,159,.5), 0 6px 20px rgba(214,36,159,.35) !important;
-}
-/* ── HERO EXPAND ── */
-.hero-expand {
-  position: fixed;
-  border-radius: 18px;
-  z-index: 9994;
-  pointer-events: none;
-  transition: none;
-}
-/* ── QR CODES ── */
-.qr-toggle {
-  display: block;
-  margin: 1.2rem auto 0;
-  padding: 8px 16px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: var(--sub);
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-  font-family: 'Inter', sans-serif;
-  font-size: .85rem;
-  font-weight: 500;
-}
-.qr-toggle:hover, .qr-toggle.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-.soc-btn .qr-overlay {
-  position: absolute;
-  inset: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-  border-radius: 14px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-.qr-mode .soc-btn .qr-overlay { opacity: 1; }
-.qr-logo {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 26px;
-  height: 26px;
-  background: #fff;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 0 2px #fff;
-  color: var(--bc, var(--accent));
-}
-.qr-logo svg { width: 16px; height: 16px; fill: currentColor; }
-.qr-logo .x-logo { font-size: .75rem; }
-/* QR focused */
-.qr-focused .soc-btn {
-  opacity: 0 !important;
-  transform: scale(0.5) !important;
-  transition: opacity 0.35s ease, transform 0.35s ease !important;
-  pointer-events: none;
-}
-.qr-focused .soc-btn.qr-active {
-  opacity: 1 !important;
-  transform: translate(var(--qr-dx, 0px), var(--qr-dy, 0px)) scale(1.7) !important;
-  z-index: 100;
-  pointer-events: auto;
-  transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-}
-/* ── PARTY INVITE MODAL ── */
-.party-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.72);
-  z-index: 9993;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s ease;
-}
-.party-modal-overlay.open { opacity: 1; pointer-events: all; }
-.party-modal {
-  background: var(--surface);
-  border-radius: 20px;
-  max-width: 360px;
-  width: 100%;
-  padding: 1.1rem;
-  display: flex;
-  flex-direction: column;
-  gap: .75rem;
-  transform: scale(0.9);
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 16px 50px rgba(0,0,0,0.35);
-}
-.party-modal-overlay.open .party-modal { transform: scale(1); }
-.party-modal img { width: 100%; border-radius: 12px; display: block; }
-.party-modal-actions { display: flex; gap: .5rem; }
-.party-modal-actions a, .party-modal-actions button {
-  flex: 1;
-  padding: .6rem .5rem;
-  border-radius: 12px;
-  font-size: .82rem;
-  font-weight: 600;
-  text-decoration: none;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: .4rem;
-  cursor: pointer;
-  border: none;
-  transition: filter 0.15s, transform 0.15s;
-}
-.party-modal-actions a:active, .party-modal-actions button:active { filter: brightness(0.9); transform: scale(0.97); }
-.party-modal-dl   { background: var(--accent); color: #fff; }
-.party-modal-wa   { background: #25D366; color: #fff; }
-.party-modal-close { background: var(--bg); color: var(--sub); border: 1px solid var(--border) !important; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlippingDave</title>
+
+  <!-- Open Graph — rich previews on socials, messengers, etc. -->
+  <meta property="og:title" content="FlippingDave">
+  <meta property="og:description" content="Links, socials & contact for FlippingDave">
+  <meta property="og:image" content="https://unavatar.io/twitter/FlippingDave">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="FlippingDave">
+  <meta name="twitter:description" content="Links, socials & contact for FlippingDave">
+  <meta name="twitter:image" content="https://unavatar.io/twitter/FlippingDave">
+
+  <!-- Favicon -->
+  <link rel="icon" href="https://unavatar.io/twitter/FlippingDave" type="image/jpeg">
+
+  <!-- Preload avatar — visual centrepiece, paint it early -->
+  <link rel="preload" href="https://unavatar.io/twitter/FlippingDave" as="image">
+
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:      #dbeeff;
+      --surface: #eef6ff;
+      --accent:  #1a6cf5;
+      --text:    #1a2a3a;
+      --sub:     #4a6a82;
+      --muted:   #7a9ab8;
+      --border:  #b0cde0;
+      --shadow:  0 2px 4px rgba(0,0,0,.05), 0 8px 28px rgba(0,0,0,.09);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* ── GRAIN ── */
+    body::after {
+      content: ''; position: fixed; inset: 0;
+      pointer-events: none; z-index: 998; opacity: .045;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* ── TOP GLOW ── */
+    body::before {
+      content: ''; position: fixed; top: -120px; left: 50%;
+      transform: translateX(-50%);
+      width: 700px; height: 420px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,.18) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── MOUSE CURSOR + TAIL (desktop only) ── */
+    @media (pointer: fine) {
+      body, a, button { cursor: none; }
+
+      #mouse-cursor {
+        position: fixed;
+        pointer-events: none;
+        z-index: 99999;
+        width: 40px; height: 21px;   /* must match SVG width="40" */
+        overflow: visible;
+      }
+
+      .tail-dot {
+        position: fixed;
+        border-radius: 50%;
+        background: #90b8d0;
+        transform: translate(-100%, -50%); /* right edge at cursor — dot stays behind nose */
+        pointer-events: none;
+        z-index: 99997;
+      }
+    }
+
+    /* ── ANT — actual life size via physical mm units ── */
+    #ant {
+      position: fixed;
+      top: 0; left: 0;
+      width: 2.5mm;
+      height: 1.5mm;
+      pointer-events: all;
+      z-index: 9999;
+      overflow: hidden;
+      /* no will-change — compositor promotion breaks fixed positioning in Chrome */
+    }
+
+    /* ════════════════════════════════
+       PAGE LAYOUT
+    ════════════════════════════════ */
+    .page {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 2.5rem 1.2rem;
+    }
+
+    /* ── PROFILE CARD ── */
+    .profile-card {
+      text-align: center;
+      width: 100%; max-width: 400px;
+    }
+
+    /* ── AVATAR BEHIND BUTTONS ── */
+    .socials-wrap { position: relative; margin-top: 1.2rem; }
+
+    .avatar-bg {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px; height: 200px;
+      border-radius: 50%; object-fit: cover;
+      opacity: 0.75;
+      z-index: 0;
+      pointer-events: none;
+      box-shadow: 0 0 0 0 rgba(26,108,245,0);
+      animation: avatarPulse 3.5s ease-in-out infinite;
+    }
+    @keyframes avatarPulse {
+      0%, 100% { box-shadow: 0 0 12px 3px rgba(26,108,245,.15); }
+      50%      { box-shadow: 0 0 28px 8px rgba(26,108,245,.35); }
+    }
+
+    /* ── HANDLE ── */
+    .handle {
+      margin-top: .6rem;
+      font-size: 1rem; font-weight: 700;
+      color: var(--muted);
+      display: inline-block;
+      cursor: default; user-select: none;
+      transition: color .2s, letter-spacing .2s;
+    }
+    .handle.drop-hidden { opacity: 0; transform: translateY(-15px); }
+    .handle.revealed {
+      opacity: 1; transform: translateY(0);
+      transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .handle:hover {
+      color: var(--accent);
+      letter-spacing: .06em;
+      animation: glitch .35s steps(2,end) 1;
+    }
+    @keyframes glitch {
+      0%   { text-shadow:  3px 0 #ff0080,-3px 0 #00ccff; }
+      33%  { text-shadow: -3px 0 #ff0080, 3px 0 #00ccff; }
+      66%  { text-shadow:  3px 2px #ff0080,-3px -2px #00ccff; }
+      100% { text-shadow: none; }
+    }
+    /* ── SOCIALS — 3×3 grid ── */
+    .socials {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .7rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .soc-btn {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--sub); text-decoration: none;
+      transition: background 2s ease, border-color 2s ease, color 2s ease, box-shadow 2s ease, transform 2s ease;
+      will-change: transform; position: relative;
+    }
+    .soc-btn.drop-hidden { opacity: 0; transform: translateY(-30px); }
+    .soc-btn.dropped {
+      opacity: 1; transform: translateY(0);
+      transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .soc-btn:hover {
+      background: var(--bc, var(--accent));
+      border-color: var(--bc, var(--accent));
+      color: #fff;
+      box-shadow: 0 6px 20px var(--bs, rgba(26,108,245,.32));
+    }
+
+    /* Instagram gradient */
+    .soc-btn.insta:hover {
+      background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+      border-color: #d6249f;
+      box-shadow: 0 6px 20px rgba(214,36,159,.35);
+    }
+
+    /* Mobile touch feedback — press-and-hold glow */
+    @media (pointer: coarse) {
+      .soc-btn:active {
+        background: var(--bc, var(--accent));
+        border-color: var(--bc, var(--accent));
+        color: #fff;
+        box-shadow: 0 0 18px var(--bs, rgba(26,108,245,.45));
+        transform: scale(1.06);
+        transition: all .15s ease;
+      }
+      .soc-btn.insta:active {
+        background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+        border-color: #d6249f;
+        box-shadow: 0 0 18px rgba(214,36,159,.45);
+        transform: scale(1.06);
+        transition: all .15s ease;
+      }
+    }
+
+    .soc-btn svg  { width: 26px; height: 26px; }
+    .x-logo { font-family: 'Black Han Sans', sans-serif; font-size: 1.3rem; line-height: 1; }
+
+    /* Share dropdown */
+    .soc-wrap { position: relative; }
+
+    .share-menu {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%; transform: translateX(-50%);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.13);
+      padding: .55rem;
+      min-width: 195px;
+      z-index: 200;
+      display: none; flex-direction: column; gap: .2rem;
+      white-space: nowrap;
+    }
+    .share-menu.open { display: flex; }
+
+    .share-item {
+      display: flex; align-items: center; gap: .7rem;
+      padding: .6rem .85rem;
+      border-radius: 10px;
+      text-decoration: none; color: var(--text);
+      font-size: .85rem; font-weight: 500;
+      transition: background .15s;
+      border: none; background: none; text-align: left; width: 100%;
+    }
+    .share-item:hover { background: var(--bg); color: var(--accent); }
+    .share-item svg { width: 15px; height: 15px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .si { font-size: .9rem; flex-shrink: 0; line-height: 1; }
+
+    /* ── LIGHT-UP ── */
+    .soc-btn.lit {
+      background: var(--bc, var(--accent)) !important;
+      border-color: transparent !important;
+      color: #fff !important;
+      box-shadow: 0 0 22px var(--bs, rgba(26,108,245,.5)), 0 6px 20px var(--bs, rgba(26,108,245,.32)) !important;
+      transform: scale(1.08) !important;
+    }
+    .soc-btn.insta.lit {
+      background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%) !important;
+      border-color: transparent !important;
+      box-shadow: 0 0 22px rgba(214,36,159,.5), 0 6px 20px rgba(214,36,159,.35) !important;
+    }
+
+    /* ── HERO EXPAND (page-transition overlay) ── */
+    .hero-expand {
+      position: fixed;
+      border-radius: 18px;
+      z-index: 9994;
+      pointer-events: none;
+      transition: none;
+    }
+
+    /* ── QR CODES ── */
+    .qr-toggle {
+      display: block; margin: 1.2rem auto 0; padding: 8px 16px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; color: var(--sub); cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      font-family: 'Inter', sans-serif; font-size: .85rem; font-weight: 500;
+    }
+    .qr-toggle:hover, .qr-toggle.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .soc-btn .qr-overlay {
+      position: absolute; inset: 4px;
+      display: flex; align-items: center; justify-content: center;
+      background: #fff; border-radius: 14px;
+      opacity: 0; transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .qr-mode .soc-btn .qr-overlay { opacity: 1; }
+
+    .qr-logo {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 26px; height: 26px;
+      background: #fff;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 0 2px #fff;
+      color: var(--bc, var(--accent));
+    }
+    .qr-logo svg { width: 16px; height: 16px; fill: currentColor; }
+    .qr-logo .x-logo { font-size: .75rem; }
+
+    /* QR focused — click one QR to expand it, others fade away */
+    .qr-focused .soc-btn {
+      opacity: 0 !important;
+      transform: scale(0.5) !important;
+      transition: opacity 0.35s ease, transform 0.35s ease !important;
+      pointer-events: none;
+    }
+    .qr-focused .soc-btn.qr-active {
+      opacity: 1 !important;
+      transform: scale(1.9) !important;
+      z-index: 100;
+      pointer-events: auto;
+      transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    }
+  </style>
 </head>
 <body>
 
-<!-- ANT SVG -->
-<svg id="ant" viewBox="0 0 18 13" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <g id="lp0"><line x1="7.8" y1="6.5" x2="3"  y2="3"  stroke="#222" stroke-width="1.1" stroke-linecap="round"/>
-              <line x1="7.8" y1="6.5" x2="3"  y2="6.5" stroke="#222" stroke-width="1.1" stroke-linecap="round"/>
-              <line x1="7.8" y1="6.5" x2="3"  y2="10" stroke="#222" stroke-width="1.1" stroke-linecap="round"/></g>
-  <g id="lp1"><line x1="9.5" y1="6.5" x2="9.5" y2="2"  stroke="#222" stroke-width="1.1" stroke-linecap="round"/>
-              <line x1="9.5" y1="6.5" x2="9.5" y2="11" stroke="#222" stroke-width="1.1" stroke-linecap="round"/></g>
-  <g id="lp2"><line x1="10.8" y1="6.5" x2="15" y2="3"  stroke="#222" stroke-width="1.1" stroke-linecap="round"/>
-              <line x1="10.8" y1="6.5" x2="15" y2="6.5" stroke="#222" stroke-width="1.1" stroke-linecap="round"/>
-              <line x1="10.8" y1="6.5" x2="15" y2="10" stroke="#222" stroke-width="1.1" stroke-linecap="round"/></g>
-  <ellipse cx="7" cy="6.5" rx="3.5" ry="2.8" fill="#111"/>
-  <circle  cx="12" cy="6.5" r="3.2" fill="#111"/>
-  <ellipse cx="4"  cy="2"   rx="1.8" ry="1.5" fill="#333"/>
-  <ellipse cx="4"  cy="11"  rx="1.8" ry="1.5" fill="#333"/>
+<!-- ══ ANT — life-size, no legs (invisible at real scale), just body + antennae ══ -->
+<svg id="ant" viewBox="0 0 22 13" xmlns="http://www.w3.org/2000/svg">
+  <!-- legs drawn first so body covers the hip bases -->
+  <g stroke="#2c1508" stroke-width="0.8" stroke-linecap="round" fill="none">
+    <!-- Pair 1: FRONT (id=lp0) -->
+    <g id="lp0">
+      <polyline points="7.8,5.0 6.5,3.2 5.0,1.8"/>
+      <polyline points="7.8,8.0 6.5,9.8 5.0,11.2"/>
+    </g>
+    <!-- Pair 2: MID (id=lp1) -->
+    <g id="lp1">
+      <polyline points="9.5,5.0 8.0,3.2 6.8,1.8"/>
+      <polyline points="9.5,8.0 8.0,9.8 6.8,11.2"/>
+    </g>
+    <!-- Pair 3: REAR (id=lp2) -->
+    <g id="lp2">
+      <polyline points="10.8,5.0 10.0,3.2 8.8,1.8"/>
+      <polyline points="10.8,8.0 10.0,9.8 8.8,11.2"/>
+    </g>
+  </g>
+  <!-- body drawn on top so it naturally covers leg bases -->
+  <ellipse cx="16.5" cy="6.5" rx="5"   ry="4"   fill="#2c1508"/>
+  <ellipse cx="9.5"  cy="6.5" rx="2.3" ry="1.8" fill="#2c1508"/>
+  <ellipse cx="4"    cy="6.5" rx="3"   ry="2.3" fill="#2c1508"/>
+  <!-- antennae -->
+  <line x1="2.8" y1="4.8" x2="1.2" y2="2.2" stroke="#2c1508" stroke-width="0.9" stroke-linecap="round"/>
+  <line x1="4.5" y1="4.5" x2="3.2" y2="1.8" stroke="#2c1508" stroke-width="0.9" stroke-linecap="round"/>
+  <circle cx="1.2" cy="2.2" r="0.7" fill="#2c1508"/>
+  <circle cx="3.2" cy="1.8" r="0.7" fill="#2c1508"/>
+  <!-- eye -->
+  <circle cx="3"   cy="6"   r="0.55" fill="#5a2a0a"/>
 </svg>
 
-<main class="page">
-  <article class="profile-card">
-    <h1 style="font-size:1.55rem;font-weight:700;letter-spacing:-.01em;">FlippingDave</h1>
+<div class="page">
+  <div class="profile-card">
+
+    <p class="handle">@FlippingDave</p>
 
     <div class="socials-wrap">
+      <img class="avatar-bg"
+           src="https://unavatar.io/twitter/FlippingDave"
+           alt="FlippingDave"
+           onerror="this.src='https://api.dicebear.com/7.x/initials/svg?seed=FD&backgroundColor=1a6cf5&textColor=ffffff'">
+
       <nav class="socials" aria-label="Social links">
 
-        <!-- ① Facebook Event — first button -->
-        <a class="soc-btn"
-           href="https://www.facebook.com/share/1DC941NqZh/"
-           target="_blank" rel="noopener noreferrer"
-           title="Facebook Event"
-           style="--bc:#1877f2;--bs:rgba(24,119,242,.35);">
-          <!-- Facebook icon -->
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+      <a class="soc-btn" style="--bc:#000;--bs:rgba(0,0,0,.25)"
+         href="https://x.com/FlippingDave" target="_blank" rel="noopener" title="X / Twitter">
+        <span class="x-logo">𝕏</span>
+      </a>
+
+      <a class="soc-btn insta"
+         href="https://instagram.com/FlippingDave" target="_blank" rel="noopener" title="Instagram">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      </a>
+
+      <a class="soc-btn" style="--bc:#1877F2;--bs:rgba(24,119,242,.35)"
+         href="https://facebook.com/FlippingDave" target="_blank" rel="noopener" title="Facebook">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      </a>
+
+      <a class="soc-btn" style="--bc:#0A66C2;--bs:rgba(10,102,194,.35)"
+         href="https://www.linkedin.com/in/flippingdave/" target="_blank" rel="noopener" title="LinkedIn">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      </a>
+
+      <a class="soc-btn" style="--bc:#25D366;--bs:rgba(37,211,102,.35)"
+         href="https://api.whatsapp.com/send?phone=61450443283" target="_blank" rel="noopener" title="WhatsApp">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      </a>
+
+      <a class="soc-btn" style="--bc:#2D8CFF;--bs:rgba(45,140,255,.35)"
+         href="https://us04web.zoom.us/j/73093807327?pwd=vSsAMyIgKGZwbmNooQASMmBkPQWblx.1" target="_blank" rel="noopener" title="Zoom">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+      </a>
+
+      <a class="soc-btn" style="--bc:#0084FF;--bs:rgba(0,132,255,.35)"
+         href="http://m.me/FlippingDave" target="_blank" rel="noopener" title="Messenger">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.626 0 12-4.974 12-11.111C24 4.975 18.626 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8.1l3.131 3.26L19.752 8.1l-6.561 6.863z"/></svg>
+      </a>
+
+      <!-- Email — filled envelope icon (clearly recognisable, not a square) -->
+      <a class="soc-btn" style="--bc:#EA4335;--bs:rgba(234,67,53,.35)"
+         href="mailto:Dave@FlippingDave.com" title="Email Dave">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/>
+        </svg>
+      </a>
+
+      <a class="soc-btn" style="--bc:#FF0000;--bs:rgba(255,0,0,.3)"
+         href="https://youtube.com/@FlippingDave" target="_blank" rel="noopener" title="YouTube">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
+      </a>
+
+      <a class="soc-btn" style="--bc:#000;--bs:rgba(0,0,0,.3)"
+         href="https://tiktok.com/@FlippingDave" target="_blank" rel="noopener" title="TikTok">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.24 8.24 0 0 0 4.83 1.55V6.78a4.85 4.85 0 0 1-1.06-.09z"/></svg>
+      </a>
+
+      <a class="soc-btn" style="--bc:#ff4500;--bs:rgba(255,69,0,.35)"
+         href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener" title="🔥 Hot">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><path d="M17.66 11.2c-.23-.3-.51-.56-.77-.82-.67-.6-1.43-1.03-2.07-1.66C13.33 7.26 13 4.85 13.95 3c-.95.23-1.78.75-2.49 1.32C8.87 6.4 7.85 10.07 9.07 13.22c.04.1.08.2.08.33 0 .22-.15.42-.35.5-.23.1-.47.04-.66-.12a.58.58 0 0 1-.14-.17C6.87 12.33 6.69 10.28 7.45 8.64 5.78 10 4.87 12.3 5 14.47c.06.5.12 1 .29 1.5.14.6.41 1.2.71 1.73C7.08 19.43 8.95 20.67 10.96 20.92c2.14.27 4.43-.12 6.07-1.6 1.83-1.66 2.47-4.32 1.53-6.6l-.13-.26c-.21-.42-.77-1.26-.77-1.26z"/></svg>
+      </a>
+
+      <a class="soc-btn" style="--bc:#F7931A;--bs:rgba(247,147,26,.35)"
+         href="lightning:lno1pgqppmsrse80qf0aara4slvcjxrvu6j2rp5ftmjy4yntlsmsutpkvkt6878sx3qstxh8cjyyah53dm0hakf7mrn98l2uvu7rt4ltkjms6dqpqpezqgp2ezkylf27pyh9jw7t2vzyv3eyd0ac36lz7632jhmkpfnply8dhlsqxwx5dw7px0s6zhmqhny0pgjtm938u4d3qz53xw2flca4m9hrjt7vln6cr8hd465m96dwqql8fk5aqjs7uwqsy29ky92yy9k2e2agcmmh4qhypsephf0atre5u6r7e6ttq8vhsdv4qqezkq8c0zzz0yuhv34mus7yptyl8kjjj7lvq6cd2feh04gjdl40kmv5gwlvhem9h3c4r44jjv2xyv2v9hns" title="Pay with Lightning">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26"><path d="M13 2L4.09 12.97 11 12l-2 10L20 9.97 13 10l2-8z"/></svg>
+      </a>
+
+      <!-- Share -->
+      <div class="soc-wrap">
+        <button class="soc-btn" id="share-btn" title="Share"
+                style="--bc:#7c3aed;--bs:rgba(124,58,237,.35)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round" width="26" height="26">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
           </svg>
-          <div class="qr-overlay"></div>
-        </a>
-
-        <!-- ② Party invite — opens party.png in new tab -->
-        <a class="soc-btn"
-           href="party.png"
-           target="_blank" rel="noopener noreferrer"
-           title="Party Invite"
-           style="--bc:#ff5e00;--bs:rgba(255,94,0,.38);"
-           data-no-nav="1">
-          🎉
-          <div class="qr-overlay"></div>
-        </a>
-
-        <!-- ③ X / Twitter -->
-        <a class="soc-btn" href="https://x.com/FlippingDave" target="_blank" rel="noopener noreferrer" title="X" style="--bc:#000;--bs:rgba(0,0,0,.28);">
-          <span class="x-logo" aria-label="X (Twitter)">𝕏</span>
-          <div class="qr-overlay"></div>
-        </a>
-
-        <!-- ④ Instagram -->
-        <a class="soc-btn insta" href="https://instagram.com/FlippingDave" target="_blank" rel="noopener noreferrer" title="Instagram" style="--bc:#d6249f;--bs:rgba(214,36,159,.35);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-          </svg>
-          <div class="qr-overlay"></div>
-        </a>
-
-        <!-- ⑤ Facebook -->
-        <a class="soc-btn" href="https://facebook.com/FlippingDave" target="_blank" rel="noopener noreferrer" title="Facebook" style="--bc:#1877f2;--bs:rgba(24,119,242,.35);">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
-          </svg>
-          <div class="qr-overlay"></div>
-        </a>
-
-        <!-- ⑥ LinkedIn -->
-        <a class="soc-btn" href="https://www.linkedin.com/in/flippingdave/" target="_blank" rel="noopener noreferrer" title="LinkedIn" style="--bc:#0077b5;--bs:rgba(0,119,181,.35);">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
-            <rect x="2" y="9" width="4" height="12"/>
-            <circle cx="4" cy="4" r="2"/>
-          </svg>
-          <div class="qr-overlay"></div>
-        </a>
-
-        <!-- ⑦ WhatsApp -->
-        <a class="soc-btn" href="https://api.whatsapp.com/send?phone=61450443283" target="_blank" rel="noopener noreferrer" title="WhatsApp" style="--bc:#25d366;--bs:rgba(37,211,102,.35);">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-          </svg>
-          <div class="qr-overlay"></div>
-        </a>
-
-        <!-- ⑧ Zoom -->
-        <a class="soc-btn" href="https://us04web.zoom.us/j/73093807327?pwd=vSsAMyIgKGZwbmNooQASMmBkPQWblx.1" target="_blank" rel="noopener noreferrer" title="Zoom" style="--bc:#2d8cff;--bs:rgba(45,140,255,.35);">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M15.5 8.5l4.5-3v13l-4.5-3V8.5zM3 8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z"/>
-          </svg>
-          <div class="qr-overlay"></div>
-        </a>
-
-        <!-- ⑨ Messenger -->
-        <a class="soc-btn" href="http://m.me/FlippingDave" target="_blank" rel="noopener noreferrer" title="Messenger" style="--bc:#0084ff;--bs:rgba(0,132,255,.35);">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12 2C6.36 2 2 6.13 2 11.7c0 2.91 1.19 5.44 3.14 7.17V22l2.93-1.62c.78.21 1.61.32 2.93.32 5.64 0 10-4.13 10-9.7C21 6.13 17.64 2 12 2zm1.05 13.06l-2.56-2.73-4.99 2.73 5.49-5.82 2.62 2.73 4.93-2.73-5.49 5.82z"/>
-          </svg>
-          <div class="qr-overlay"></div>
-        </a>
-
-        <!-- ⑩ Email -->
-        <a class="soc-btn" href="mailto:Dave@FlippingDave.com" title="Email Dave" style="--bc:#ea4335;--bs:rgba(234,67,53,.35);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-            <polyline points="22,6 12,13 2,6"/>
-          </svg>
-          <div class="qr-overlay"></div>
-        </a>
-
-        <!-- ⑪ YouTube -->
-        <a class="soc-btn" href="https://youtube.com/@FlippingDave" target="_blank" rel="noopener noreferrer" title="YouTube" style="--bc:#ff0000;--bs:rgba(255,0,0,.32);">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
-            <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="#fff"/>
-          </svg>
-          <div class="qr-overlay"></div>
-        </a>
-
-        <!-- ⑫ TikTok -->
-        <a class="soc-btn" href="https://tiktok.com/@FlippingDave" target="_blank" rel="noopener noreferrer" title="TikTok" style="--bc:#010101;--bs:rgba(1,1,1,.35);">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.67a8.22 8.22 0 0 0 4.77 1.52V6.75a4.85 4.85 0 0 1-1-.06z"/>
-          </svg>
-          <div class="qr-overlay"></div>
-        </a>
-
-        <!-- ⑬ 🔥 Hot -->
-        <a class="soc-btn" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener noreferrer" title="🔥 Hot" style="--bc:#ff5e00;--bs:rgba(255,94,0,.38); font-size:1.4rem;">
-          🔥
-          <div class="qr-overlay"></div>
-        </a>
-
-        <!-- ⑭ Lightning Pay -->
-        <a class="soc-btn" href="lightning:lno1pgqppmsrse80qf0aara4slvcjxrvu6j2rp5ftmjy4yntlsmsutpkvkt6878sx3qstxh8cjyyah53dm0hakf7mrn98l2uvu7rt4ltkjms6dqpqpezqgp2ezkylf27pyh9jw7t2vzyv3eyd0ac36lz7632jhmkpfnply8dhlsqxwx5dw7px0s6zhmqhny0pgjtm938u4d3qz53xw2flca4m9hrjt7vln6cr8hd465m96dwqql8fk5aqjs7uwqsy29ky92yy9k2e2agcmmh4qhypsephf0atre5u6r7e6ttq8vhsdv4qqezkq8c0zzz0yuhv34mus7yptyl8kjjj7lvq6cd2feh04gjdl40kmv5gwlvhem9h3c4r44jjv2xyv2v9hns" title="Pay with Lightning" style="--bc:#f7931a;--bs:rgba(247,147,26,.38);">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-          </svg>
-          <div class="qr-overlay"></div>
-        </a>
-
-        <!-- ⑮ Share button -->
-        <div class="soc-wrap">
-          <button class="soc-btn" id="share-btn" title="Share" style="--bc:#34a853;--bs:rgba(52,168,83,.35);" aria-haspopup="true" aria-expanded="false">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-            </svg>
-            <div id="share-menu" class="share-menu" role="menu">
-              <button class="share-item" id="copy-link-btn" role="menuitem">
-                <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                <span id="copy-label">Copy link</span>
-              </button>
-              <a class="share-item" id="share-x" href="#" target="_blank" rel="noopener noreferrer" role="menuitem">
-                <svg viewBox="0 0 24 24"><path d="M4 4l16 16M20 4L4 20" stroke-width="2.5"/></svg>
-                𝕏 &nbsp;Share on X
-              </a>
-              <a class="share-item" id="share-fb" href="#" target="_blank" rel="noopener noreferrer" role="menuitem">
-                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-                📘 &nbsp;Share on Facebook
-              </a>
-              <a class="share-item" id="share-wa" href="#" target="_blank" rel="noopener noreferrer" role="menuitem">
-                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                💬 &nbsp;Share on WhatsApp
-              </a>
-            </div>
+        </button>
+        <div class="share-menu" id="share-menu">
+          <button class="share-item" id="copy-link-btn">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span id="copy-label">Copy link</span>
           </button>
+          <a class="share-item" id="share-x"  href="#" target="_blank" rel="noopener"><span class="si">𝕏</span> Share on X</a>
+          <a class="share-item" id="share-fb" href="#" target="_blank" rel="noopener"><span class="si">📘</span> Share on Facebook</a>
+          <a class="share-item" id="share-wa" href="#" target="_blank" rel="noopener"><span class="si">💬</span> Share on WhatsApp</a>
         </div>
+      </div>
 
-      </nav><!-- /.socials -->
-
-      <p class="handle drop-hidden" aria-label="Handle">@FlippingDave</p>
-
-      <button class="qr-toggle" id="qr-toggle" type="button">QR Codes</button>
-
-    </div><!-- /.socials-wrap -->
-  </article>
-</main>
-
-<!-- Party invite modal (kept for modal-style usage if needed in future) -->
-<div class="party-modal-overlay" id="party-modal-overlay" role="dialog" aria-modal="true" aria-label="Party Invite">
-  <div class="party-modal">
-    <img src="party.png" alt="Party Invite" loading="lazy">
-    <div class="party-modal-actions">
-      <button class="party-modal-dl" id="party-dl-btn" type="button">⬇ Save</button>
-      <a class="party-modal-wa" id="party-wa-btn" href="#" target="_blank" rel="noopener noreferrer">WhatsApp</a>
-      <button class="party-modal-close" id="party-close-btn" type="button">✕ Close</button>
+      </nav>
     </div>
+
+    <button id="qr-toggle" class="qr-toggle" title="Show QR codes">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style="vertical-align:middle;margin-right:4px"><path d="M3 11h2v2H3zm0-4h2v2H3zm4 4h2v2H7zM7 3h2v2H7zm4 0h2v2h-2zm4 8h2v2h-2zm0-4h2v2h-2zm0-4h2v2h-2zm4 8h2v2h-2zM3 15h8v8H3zm2 2v4h4v-4zM13 3h8v8h-8zm2 2v4h4V5zM3 3h8v8H3zm2 2v4h4V5zm8 8h8v8h-8zm2 2v4h4v-4z"/></svg>QR Codes
+    </button>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/qr-creator@1.0.0/dist/qr-creator.min.js"></script>
 <script>
 (function () {
   'use strict';
 
   /* ─────────────── SHARED STATE ─────────────── */
   let droppingIn = true;
-  let exploding  = false;
-  let qrMode     = false;
-  let shaking    = false;
+  let exploding = false;
+  let qrMode = false;
+  let shaking = false;
 
   /* ─────────────── DROP-IN ANIMATION ─────────────── */
   const handleEl = document.querySelector('.handle');
-  const allBtns  = Array.from(document.querySelectorAll('.soc-btn'));
+  const allBtns = Array.from(document.querySelectorAll('.soc-btn'));
   const DROP_STAGGER = 90;
 
+  // Hide via CSS class (no inline styles — clean cascade)
   handleEl.classList.add('drop-hidden');
   allBtns.forEach(btn => btn.classList.add('drop-hidden'));
 
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
+  // Double-rAF ensures browser paints hidden state before transitions fire
+  requestAnimationFrame(() => { requestAnimationFrame(() => {
+    setTimeout(() => {
+      handleEl.classList.remove('drop-hidden');
+      handleEl.classList.add('revealed');
+    }, 150);
+
+    allBtns.forEach((btn, i) => {
       setTimeout(() => {
-        handleEl.classList.remove('drop-hidden');
-        handleEl.classList.add('revealed');
-      }, 150);
-      allBtns.forEach((btn, i) => {
-        setTimeout(() => {
-          btn.classList.remove('drop-hidden');
-          btn.classList.add('dropped');
-        }, 500 + i * DROP_STAGGER);
-      });
-      const totalDropTime = 500 + allBtns.length * DROP_STAGGER + 600;
-      setTimeout(() => {
-        handleEl.classList.remove('revealed');
-        allBtns.forEach(btn => btn.classList.remove('dropped'));
-        droppingIn = false;
-        runLightShow();
-      }, totalDropTime);
+        btn.classList.remove('drop-hidden');
+        btn.classList.add('dropped');
+      }, 500 + i * DROP_STAGGER);
     });
-  });
+
+    const totalDropTime = 500 + allBtns.length * DROP_STAGGER + 600;
+    setTimeout(() => {
+      handleEl.classList.remove('revealed');
+      allBtns.forEach(btn => btn.classList.remove('dropped'));
+      droppingIn = false;
+      runLightShow();
+    }, totalDropTime);
+  }); });
 
   /* ─────────────── LIGHT SHOW ─────────────── */
-  const STEP = 1500;
-  const HOLD = 1800;
+  const STEP = 1500; // ms between each button — slow overlapping cascade
+  const HOLD = 1800; // ms lit before fading back out
   function runLightShow() {
     const btns = Array.from(document.querySelectorAll('.soc-btn'));
     for (let i = btns.length - 1; i > 0; i--) {
@@ -629,24 +526,19 @@ body::before {
     });
     setTimeout(runLightShow, btns.length * STEP);
   }
+  // Note: runLightShow() is called by the drop-in timer above, not here
 
   /* ─────────────── SHARE ─────────────── */
   const shareBtn  = document.getElementById('share-btn');
   const shareMenu = document.getElementById('share-menu');
   const copyLabel = document.getElementById('copy-label');
   const url = location.href;
-
   document.getElementById('share-x').href  = `https://twitter.com/intent/tweet?text=Check+out+%40FlippingDave!&url=${encodeURIComponent(url)}`;
   document.getElementById('share-fb').href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
   document.getElementById('share-wa').href = `https://api.whatsapp.com/send?text=${encodeURIComponent('Check out FlippingDave! ' + url)}`;
-
-  shareBtn.addEventListener('click', e => {
-    e.stopPropagation();
-    shareMenu.classList.toggle('open');
-  });
+  shareBtn.addEventListener('click', e => { e.stopPropagation(); shareMenu.classList.toggle('open'); });
   document.addEventListener('click', () => shareMenu.classList.remove('open'));
   shareMenu.addEventListener('click', e => e.stopPropagation());
-
   document.getElementById('copy-link-btn').addEventListener('click', () => {
     navigator.clipboard.writeText(url).then(() => {
       copyLabel.textContent = '✓ Copied!';
@@ -659,47 +551,55 @@ body::before {
     const clicked = e.target.closest('.soc-btn');
     if (!clicked || exploding || shaking || droppingIn || qrMode) return;
     if (clicked.id === 'share-btn') return;
-    // Party button now has a real href — let it open naturally (new tab)
-    if (clicked.dataset.noNav === '1') return;
 
     const href = clicked.getAttribute('href');
     if (!href) return;
+
     exploding = true;
     e.preventDefault();
 
     allBtns.forEach(b => { b.style.transform = ''; });
+
     const cr = clicked.getBoundingClientRect();
     const cx = cr.left + cr.width / 2, cy = cr.top + cr.height / 2;
-
     const ghosts = [];
+
+    // Blast every other button off-screen
     allBtns.forEach(btn => {
       if (btn === clicked) return;
-      const r   = btn.getBoundingClientRect();
-      const bx  = r.left + r.width / 2, by = r.top + r.height / 2;
+      const r = btn.getBoundingClientRect();
+      const bx = r.left + r.width / 2, by = r.top + r.height / 2;
+      // Angle radiating away from the clicked button, plus a random wobble
       const angle = Math.atan2(by - cy, bx - cx) + (Math.random() - 0.5) * 0.5;
       const dist  = 650 + Math.random() * 350;
       const dx    = Math.cos(angle) * dist;
       const dy    = Math.sin(angle) * dist;
       const rot   = (Math.random() - 0.5) * 130;
+      // Small random delay so they don't all launch at the exact same frame
       const stagger = Math.random() * 55;
+
       const ghost = btn.cloneNode(true);
       ghost.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;margin:0;pointer-events:none;z-index:9990;box-sizing:border-box;transition:none;opacity:1;`;
       document.body.appendChild(ghost);
       btn.style.visibility = 'hidden';
       ghosts.push({ ghost, btn });
+
       setTimeout(() => {
+        // Fast initial burst, fade starts only after 150ms so they're visible mid-flight
         ghost.style.transition = 'transform 0.55s cubic-bezier(0.15,0,0.65,0.85), opacity 0.35s ease 0.15s';
         ghost.style.transform  = `translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px) rotate(${rot.toFixed(1)}deg) scale(0.1)`;
         ghost.style.opacity    = '0';
       }, stagger);
     });
 
-    const isInsta     = clicked.classList.contains('insta');
-    const glowColor   = isInsta ? 'rgba(214,36,159,.7)' : (clicked.style.getPropertyValue('--bs').trim() || 'rgba(26,108,245,.6)');
+    // Clicked button: sharp pop + colour glow, stays visible throughout
+    const isInsta = clicked.classList.contains('insta');
+    const glowColor = isInsta ? 'rgba(214,36,159,.7)' : (clicked.style.getPropertyValue('--bs').trim() || 'rgba(26,108,245,.6)');
     clicked.style.transition = 'transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease';
     clicked.style.transform  = 'scale(1.18)';
     clicked.style.boxShadow  = `0 0 0 4px #fff, 0 0 32px 10px ${glowColor}`;
 
+    // After the explosions are clearly visible, open the link
     const isExternal = clicked.getAttribute('target') === '_blank';
     setTimeout(() => {
       if (isExternal) {
@@ -707,9 +607,11 @@ body::before {
       } else {
         location.href = href;
       }
+      // Reset clicked button style
       clicked.style.transform  = '';
       clicked.style.boxShadow  = '';
       clicked.style.transition = '';
+      // Restore all real buttons and remove ghosts
       setTimeout(() => {
         ghosts.forEach(({ ghost, btn }) => { ghost.remove(); btn.style.visibility = ''; });
         exploding = false;
@@ -719,13 +621,16 @@ body::before {
 
   /* ─────────────── QR CODES ─────────────── */
   const qrToggle = document.getElementById('qr-toggle');
+
+  // Generate QR overlays for each button with an href
   if (typeof QrCreator !== 'undefined') {
     document.querySelectorAll('.soc-btn[href]').forEach(btn => {
-      const overlay = btn.querySelector('.qr-overlay');
-      if (!overlay) return;
+      const overlay = document.createElement('div');
+      overlay.className = 'qr-overlay';
       const canvas = document.createElement('canvas');
       QrCreator.render({ text: btn.href, radius: 0.3, ecLevel: 'H', size: 90, fill: '#1a2a3a', background: '#fff' }, canvas);
       overlay.appendChild(canvas);
+      // Clone the button's icon as a centered logo on the QR
       const icon = btn.querySelector('svg, .x-logo');
       if (icon) {
         const logo = document.createElement('div');
@@ -733,21 +638,25 @@ body::before {
         logo.appendChild(icon.cloneNode(true));
         overlay.appendChild(logo);
       }
+      btn.appendChild(overlay);
     });
   }
 
+  // Toggle all QR codes
   qrToggle.addEventListener('click', e => {
     e.stopPropagation();
     qrMode = !qrMode;
     const sNav = document.querySelector('.socials');
     sNav.classList.toggle('qr-mode', qrMode);
     qrToggle.classList.toggle('active', qrMode);
+    // Clear focus state when toggling off
     if (!qrMode) {
       sNav.classList.remove('qr-focused');
       sNav.querySelectorAll('.qr-active').forEach(b => b.classList.remove('qr-active'));
     }
   });
 
+  // Long-press individual button → show just that QR
   let lpTimer = null;
   document.querySelector('.socials').addEventListener('pointerdown', e => {
     const btn = e.target.closest('.soc-btn');
@@ -758,18 +667,20 @@ body::before {
       overlay.style.opacity = '1';
       e.preventDefault();
       function hide() { overlay.style.opacity = ''; }
-      btn.addEventListener('pointerup',     hide, { once: true });
+      btn.addEventListener('pointerup', hide, { once: true });
       btn.addEventListener('pointercancel', hide, { once: true });
     }, 600);
   });
-  document.querySelector('.socials').addEventListener('pointerup',     () => clearTimeout(lpTimer));
+  document.querySelector('.socials').addEventListener('pointerup', () => clearTimeout(lpTimer));
   document.querySelector('.socials').addEventListener('pointercancel', () => clearTimeout(lpTimer));
 
+  // QR focus — click a button in QR mode to expand it, others hide
   const socialsNav = document.querySelector('.socials');
   socialsNav.addEventListener('click', e => {
-    if (e.target.closest('[data-no-nav]')) return;
     if (!qrMode) return;
     const btn = e.target.closest('.soc-btn');
+
+    // If already focused, click anywhere to unfocus
     if (socialsNav.classList.contains('qr-focused')) {
       socialsNav.classList.remove('qr-focused');
       socialsNav.querySelectorAll('.qr-active').forEach(b => b.classList.remove('qr-active'));
@@ -777,6 +688,7 @@ body::before {
       e.stopPropagation();
       return;
     }
+
     if (!btn) return;
     e.preventDefault();
     e.stopPropagation();
@@ -797,19 +709,24 @@ body::before {
   const lp0 = document.getElementById('lp0');
   const lp1 = document.getElementById('lp1');
   const lp2 = document.getElementById('lp2');
-  document.documentElement.appendChild(ant);
+  document.documentElement.appendChild(ant); /* escape body — guarantees viewport containing block */
 
+  /* dynamic sizing — getBoundingClientRect is reliable for SVG; offsetWidth can return 0 */
   let antW = 0, antH = 0;
   function cacheAntSize() {
     const r = ant.getBoundingClientRect();
-    antW = r.width  || 9;
-    antH = r.height || 6;
+    antW = r.width  || 9;   /* fallback: 2.5mm @96dpi ≈ 9px */
+    antH = r.height || 6;   /* fallback: 1.5mm @96dpi ≈ 6px */
   }
   cacheAntSize();
 
-  let vpW = innerWidth  || 800;
-  let vpH = innerHeight || 600;
-  addEventListener('resize', () => { vpW = innerWidth; vpH = innerHeight; cacheAntSize(); });
+  /* cache viewport so boundary maths never sees 0 */
+  let vpW = innerWidth  || document.documentElement.clientWidth  || 800;
+  let vpH = innerHeight || document.documentElement.clientHeight || 600;
+  addEventListener('resize', () => {
+    vpW = innerWidth; vpH = innerHeight;
+    cacheAntSize();
+  });
 
   let ax = vpW * (.2 + Math.random() * .6);
   let ay = vpH * (.2 + Math.random() * .6);
@@ -824,25 +741,32 @@ body::before {
 
   function antTick() {
     if (fleeFrames > 0) { fleeFrames--; speed = 3; } else speed = baseSpeed;
+
     if (pauseLeft > 0 && fleeFrames === 0) {
       pauseLeft--;
       placeAnt(ax, ay, angle + Math.sin(Date.now() / 75) * 0.03, 0);
-      requestAnimationFrame(antTick);
-      return;
+      requestAnimationFrame(antTick); return;
     }
-    if (fleeFrames === 0 && Math.random() < .004) { pauseLeft = 45 + Math.floor(Math.random() * 90); requestAnimationFrame(antTick); return; }
+    if (fleeFrames === 0 && Math.random() < .004) {
+      pauseLeft = 45 + Math.floor(Math.random() * 90);
+      requestAnimationFrame(antTick); return;
+    }
+
     angle += (Math.random() - .5) * .08;
     if (--turnTimer <= 0) { angle += (Math.random() - .5) * 1.1; turnTimer = 90 + Math.floor(Math.random() * 130); }
+
     ax += Math.cos(angle) * speed;
     ay += Math.sin(angle) * speed;
     const pad = 24;
-    if (ax < pad)       { angle = Math.PI - angle; ax = pad; }
-    if (ax > vpW - pad) { angle = Math.PI - angle; ax = vpW - pad; }
-    if (ay < pad)       { angle = -angle; ay = pad; }
-    if (ay > vpH - pad) { angle = -angle; ay = vpH - pad; }
+    if (ax < pad)         { angle = Math.PI - angle; ax = pad; }
+    if (ax > vpW - pad)   { angle = Math.PI - angle; ax = vpW - pad; }
+    if (ay < pad)         { angle = -angle; ay = pad; }
+    if (ay > vpH - pad)   { angle = -angle; ay = vpH - pad; }
+
     legPhase += .38;
+    // drive legs from JS so direction is always correct regardless of CSS rotation
     const dir = Math.cos(angle) >= 0 ? -1 : 1;
-    const sw  = Math.sin(legPhase) * 10 * dir;
+    const sw = Math.sin(legPhase) * 10 * dir;
     lp0.setAttribute('transform', `rotate(${sw} 7.8 6.5)`);
     lp1.setAttribute('transform', `rotate(${-sw} 9.5 6.5)`);
     lp2.setAttribute('transform', `rotate(${sw} 10.8 6.5)`);
@@ -851,6 +775,7 @@ body::before {
   }
   antTick();
 
+  /* ── Ant click → fireworks ── */
   ant.addEventListener('click', () => { fleeFrames = 140; launchFireworks(); });
 
   /* ─────────────── FIREWORKS ─────────────── */
@@ -861,12 +786,11 @@ body::before {
     document.body.appendChild(cvs);
     const ctx = cvs.getContext('2d');
     const C = ['#1a6cf5','#ff5e00','#ffd000','#00ccff','#ff0080','#7c3aed','#25D366','#ffffff','#ff4444','#ffaa00'];
+
     class Rocket {
       constructor() {
-        this.x = innerWidth * (.1 + Math.random() * .8);
-        this.y = innerHeight + 5;
-        this.vy = -(9 + Math.random() * 5);
-        this.vx = (Math.random() - .5) * 1.5;
+        this.x = innerWidth * (.1 + Math.random() * .8); this.y = innerHeight + 5;
+        this.vy = -(9 + Math.random() * 5); this.vx = (Math.random() - .5) * 1.5;
         this.color = C[Math.floor(Math.random() * C.length)];
         this.trail = []; this.done = false;
       }
@@ -889,13 +813,13 @@ body::before {
           ctx.fillStyle = this.color;
           ctx.beginPath(); ctx.arc(this.trail[i].x, this.trail[i].y, 2.5, 0, Math.PI*2); ctx.fill();
         }
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = '#fff';
+        ctx.globalAlpha = 1; ctx.fillStyle = '#fff';
         ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI*2); ctx.fill();
       }
     }
+
     class Spark {
-      constructor(x, y, color, sm=1) {
+      constructor(x, y, color, sm = 1) {
         this.x = x; this.y = y;
         const a = Math.random() * Math.PI * 2, s = (1.5 + Math.random() * 6) * sm;
         this.vx = Math.cos(a) * s; this.vy = Math.sin(a) * s;
@@ -906,9 +830,8 @@ body::before {
       update() {
         this.tail.push({ x: this.x, y: this.y });
         if (this.tail.length > 5) this.tail.shift();
-        this.x += this.vx; this.y += this.vy;
-        this.vy += .1; this.vx *= .98; this.life -= this.decay;
-        return this.life > 0;
+        this.x += this.vx; this.y += this.vy; this.vy += .1; this.vx *= .98;
+        this.life -= this.decay; return this.life > 0;
       }
       draw() {
         for (let i = 0; i < this.tail.length; i++) {
@@ -916,18 +839,18 @@ body::before {
           ctx.fillStyle = this.color;
           ctx.beginPath(); ctx.arc(this.tail[i].x, this.tail[i].y, this.size * .6, 0, Math.PI*2); ctx.fill();
         }
-        ctx.globalAlpha = this.life;
-        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.life; ctx.fillStyle = this.color;
         ctx.beginPath(); ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI*2); ctx.fill();
       }
     }
+
     const rockets = [], sparks = [];
     [0,250,500,750,1000,1300,1600,1900,2200,2500,2800,3100,3400,3700].forEach(d => setTimeout(() => rockets.push(new Rocket()), d));
     const start = performance.now();
     (function loop() {
       ctx.clearRect(0, 0, cvs.width, cvs.height);
       for (let i = rockets.length-1; i >= 0; i--) { if (!rockets[i].update(sparks)) rockets.splice(i,1); else rockets[i].draw(); }
-      for (let i = sparks.length-1;  i >= 0; i--) { if (!sparks[i].update())        sparks.splice(i,1);  else sparks[i].draw();  }
+      for (let i = sparks.length-1;  i >= 0; i--) { if (!sparks[i].update())        sparks.splice(i,1);  else sparks[i].draw(); }
       ctx.globalAlpha = 1;
       if (performance.now() - start < 5500 || rockets.length || sparks.length) requestAnimationFrame(loop);
       else cvs.remove();
@@ -938,22 +861,25 @@ body::before {
   if ('ontouchstart' in window) {
     const socialsWrap = document.querySelector('.socials-wrap');
     let tiltTarget = 0, tiltCurrent = 0;
+    // shaking flag hoisted to shared state above
     let lastMag = 9.8;
 
     function startMotion() {
       window.addEventListener('deviceorientation', e => {
         if (e.gamma == null) return;
-        tiltTarget = Math.max(-15, Math.min(15, e.gamma)) * 0.45;
+        tiltTarget = Math.max(-30, Math.min(30, e.gamma)) * 1.2;
       });
+
       window.addEventListener('devicemotion', e => {
         if (shaking) return;
         const a = e.accelerationIncludingGravity;
         if (!a) return;
-        const mag   = Math.sqrt((a.x||0)*(a.x||0) + (a.y||0)*(a.y||0) + (a.z||0)*(a.z||0));
+        const mag = Math.sqrt((a.x||0)*(a.x||0) + (a.y||0)*(a.y||0) + (a.z||0)*(a.z||0));
         const delta = Math.abs(mag - lastMag);
         lastMag = mag;
         if (delta > 18) triggerPile();
       });
+
       (function tiltLoop() {
         tiltCurrent += (tiltTarget - tiltCurrent) * 0.12;
         if (socialsWrap) socialsWrap.style.transform = `translateX(${tiltCurrent.toFixed(2)}px)`;
@@ -961,9 +887,13 @@ body::before {
       })();
     }
 
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    if (typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      // iOS 13+ requires user gesture to grant motion permission
       document.addEventListener('touchstart', function ask() {
-        DeviceOrientationEvent.requestPermission().then(r => { if (r === 'granted') startMotion(); }).catch(() => {});
+        DeviceOrientationEvent.requestPermission()
+          .then(r => { if (r === 'granted') startMotion(); })
+          .catch(() => {});
         document.removeEventListener('touchstart', ask);
       }, { once: true });
     } else {
@@ -975,6 +905,7 @@ body::before {
       const btns = Array.from(document.querySelectorAll('.soc-btn'));
       const particles = [];
       const floor = window.innerHeight - 14;
+
       btns.forEach(btn => {
         const r = btn.getBoundingClientRect();
         const ghost = btn.cloneNode(true);
@@ -982,20 +913,38 @@ body::before {
         document.body.appendChild(ghost);
         btn.style.opacity = '0';
         btn.style.pointerEvents = 'none';
-        particles.push({ el: ghost, x: r.left, y: r.top, w: r.width, h: r.height, ox: r.left, oy: r.top, vx: (Math.random()-0.5)*2.5, vy: -(Math.random()*1), rot: 0, vrot: (Math.random()-0.5)*4 });
+        particles.push({
+          el: ghost,
+          x: r.left, y: r.top, w: r.width, h: r.height,
+          ox: r.left, oy: r.top,
+          vx: (Math.random() - 0.5) * 2.5,   // half speed
+          vy: -(Math.random() * 1),            // half speed
+          rot: 0, vrot: (Math.random() - 0.5) * 4  // half speed
+        });
       });
-      const g = 0.275;
+
+      const g = 0.275; // half gravity
       let rafId, done = false;
+
       (function loop() {
         let anyMoving = false;
         particles.forEach(p => {
-          p.vy += g; p.x += p.vx; p.y += p.vy; p.rot += p.vrot;
-          if (p.y + p.h >= floor) { p.y = floor - p.h; p.vy *= -0.10; p.vx *= 0.70; p.vrot *= 0.50; }
+          p.vy += g;
+          p.x += p.vx; p.y += p.vy;
+          p.rot += p.vrot;
+          if (p.y + p.h >= floor) {
+            p.y = floor - p.h;
+            p.vy *= -0.10;  // barely bounces — locks into visible pile
+            p.vx *= 0.70;
+            p.vrot *= 0.50;
+          }
           if (Math.abs(p.vy) > 0.1 || Math.abs(p.vx) > 0.1 || p.y + p.h < floor - 1) anyMoving = true;
           p.el.style.transform = `translate(${(p.x-p.ox).toFixed(1)}px,${(p.y-p.oy).toFixed(1)}px) rotate(${p.rot.toFixed(1)}deg)`;
         });
         if (!done && anyMoving) rafId = requestAnimationFrame(loop);
       })();
+
+      // Tap / click anywhere to send buttons back up in reverse
       setTimeout(() => {
         let resetting = false;
         function doReset(e) {
@@ -1004,52 +953,58 @@ body::before {
           e.preventDefault();
           done = true;
           if (rafId) cancelAnimationFrame(rafId);
+          // Stagger each button sliding back up to its original position
           particles.forEach((p, i) => {
             setTimeout(() => {
               p.el.style.transition = 'transform 0.75s cubic-bezier(0.33, 0, 0.66, 1)';
-              p.el.style.transform  = 'translate(0px,0px) rotate(0deg)';
+              p.el.style.transform = 'translate(0px,0px) rotate(0deg)';
             }, i * 35);
           });
           const dur = particles.length * 35 + 750;
           setTimeout(() => {
-            btns.forEach(btn => { btn.style.transition = 'opacity 0.3s'; btn.style.opacity = ''; btn.style.pointerEvents = ''; });
+            btns.forEach(btn => {
+              btn.style.transition = 'opacity 0.3s';
+              btn.style.opacity = '';
+              btn.style.pointerEvents = '';
+            });
           }, dur - 200);
           setTimeout(() => {
             particles.forEach(p => p.el.remove());
             btns.forEach(btn => { btn.style.transition = ''; });
             shaking = false;
           }, dur + 150);
-          document.removeEventListener('click',      doReset);
+          document.removeEventListener('click', doReset);
           document.removeEventListener('touchstart', doReset);
         }
-        document.addEventListener('click',      doReset);
+        document.addEventListener('click', doReset);
         document.addEventListener('touchstart', doReset);
-      }, 800);
+      }, 800); // delay avoids the shake gesture itself triggering reset
     }
   }
 
   /* ─────────────── MOUSE CURSOR + TAIL ─────────────── */
   if (!matchMedia('(pointer: fine)').matches) return;
 
+  /* Mouse SVG — facing right, nose (hotspot) at ~(28.5, 12.5) */
   const mc = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   mc.id = 'mouse-cursor';
   mc.setAttribute('viewBox', '-10 0 40 21');
-  mc.setAttribute('width', '40');
-  mc.setAttribute('height', '21');
+  mc.setAttribute('width', '40'); mc.setAttribute('height', '21');
   mc.innerHTML = `
     <path d="M2 11 Q-2 7 -6 10 Q-9 14.5 -7 17" fill="none" stroke="#c8a8a0" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <ellipse cx="11" cy="11" rx="9" ry="6.5" fill="#8a7468"/>
-    <circle cx="22" cy="11.5" r="6.5" fill="#8a7468"/>
+    <ellipse cx="11" cy="11" rx="9"   ry="6.5" fill="#8a7468"/>
+    <circle  cx="22" cy="11.5" r="6.5" fill="#8a7468"/>
     <ellipse cx="19.5" cy="4.5" rx="3.2" ry="2.8" fill="#aa8e87"/>
-    <ellipse cx="19.5" cy="4.5" rx="2" ry="1.7" fill="#e8b8c0"/>
-    <ellipse cx="25" cy="4" rx="3" ry="2.6" fill="#aa8e87"/>
-    <ellipse cx="25" cy="4" rx="1.8" ry="1.6" fill="#e8b8c0"/>
-    <circle cx="23" cy="10.5" r="2" fill="#0d0805"/>
-    <circle cx="22.3" cy="9.8" r="0.7" fill="#ffffff"/>
+    <ellipse cx="19.5" cy="4.5" rx="2"   ry="1.7" fill="#e8b8c0"/>
+    <ellipse cx="25"   cy="4"   rx="3"   ry="2.6" fill="#aa8e87"/>
+    <ellipse cx="25"   cy="4"   rx="1.8" ry="1.6" fill="#e8b8c0"/>
+    <circle  cx="23"   cy="10.5" r="2"   fill="#0d0805"/>
+    <circle  cx="22.3" cy="9.8"  r="0.7" fill="#ffffff"/>
   `;
   document.body.appendChild(mc);
+  const NOSE_X = 38.5, NOSE_Y = 11.5;  /* nose tip = cursor hotspot */
 
-  const NOSE_X = 38.5, NOSE_Y = 11.5;
+  /* Tail dots */
   const TAIL = 65;
   const tailDots = [];
   for (let i = 0; i < TAIL; i++) {
@@ -1062,8 +1017,10 @@ body::before {
     document.body.appendChild(d);
     tailDots.push(d);
   }
+
   const positions = Array.from({ length: TAIL }, () => ({ x: -300, y: -300 }));
-  let mx = -300, my = -300, lastMx = -300, lastMy = -300;
+  let mx = -300, my = -300;
+  let lastMx = -300, lastMy = -300;
   let targetAngle = 0, smoothAngle = 0;
 
   document.addEventListener('mousemove', e => {
@@ -1072,6 +1029,7 @@ body::before {
     lastMx = mx = e.clientX; lastMy = my = e.clientY;
   });
 
+  /* Magnetic buttons */
   const magnets = document.querySelectorAll('.soc-btn');
   document.addEventListener('mousemove', e => {
     magnets.forEach(el => {
@@ -1085,74 +1043,30 @@ body::before {
 
   function lerpAngle(a, b, t) {
     let d = b - a;
-    while (d > 180) d -= 360;
+    while (d >  180) d -= 360;
     while (d < -180) d += 360;
     return a + d * t;
   }
 
   (function rafLoop() {
     smoothAngle = lerpAngle(smoothAngle, targetAngle, 0.1);
-    mc.style.left = (mx - NOSE_X) + 'px';
-    mc.style.top  = (my - NOSE_Y) + 'px';
+    mc.style.left            = (mx - NOSE_X) + 'px';
+    mc.style.top             = (my - NOSE_Y) + 'px';
     mc.style.transformOrigin = NOSE_X + 'px ' + NOSE_Y + 'px';
-    mc.style.transform = `rotate(${smoothAngle}deg)`;
+    mc.style.transform       = `rotate(${smoothAngle}deg)`;
     positions.unshift({ x: mx, y: my });
     positions.length = TAIL;
     const SKIP = 6;
-    tailDots.forEach((d, i) => {
-      const p = positions[Math.min(i + SKIP, positions.length - 1)];
-      d.style.left = p.x + 'px';
-      d.style.top  = p.y + 'px';
-    });
+    tailDots.forEach((d, i) => { const p = positions[Math.min(i + SKIP, positions.length - 1)]; d.style.left = p.x + 'px'; d.style.top = p.y + 'px'; });
     requestAnimationFrame(rafLoop);
   })();
 
-  /* ─────────────── PARTY MODAL (download/whatsapp) ─────────────── */
-  const partyOverlay = document.getElementById('party-modal-overlay');
-  const partyClose   = document.getElementById('party-close-btn');
-  const partyDl      = document.getElementById('party-dl-btn');
-  const partyWa      = document.getElementById('party-wa-btn');
-
-  if (partyWa) {
-    partyWa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent('Check out the party invite! ' + location.href)}`;
-  }
-  if (partyClose && partyOverlay) {
-    partyClose.addEventListener('click', () => partyOverlay.classList.remove('open'));
-    partyOverlay.addEventListener('click', e => { if (e.target === partyOverlay) partyOverlay.classList.remove('open'); });
-  }
-  if (partyDl) {
-    partyDl.addEventListener('click', () => {
-      fetch('party.png')
-        .then(r => r.blob())
-        .then(blob => {
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = 'party-invite.png';
-          a.click();
-          setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-        })
-        .catch(() => window.open('party.png', '_blank'));
-    });
-  }
-
-  /* ─────────────── QR FOCUS POSITIONING ─────────────── */
-  socialsNav.addEventListener('click', e => {
-    if (!qrMode) return;
-    const btn = e.target.closest('.soc-btn');
-    if (!btn) return;
-    requestAnimationFrame(() => {
-      if (!btn.classList.contains('qr-active')) return;
-      const r    = btn.getBoundingClientRect();
-      const bCx  = r.left + r.width / 2;
-      const bCy  = r.top  + r.height / 2;
-      const vpCx = window.innerWidth  / 2;
-      const vpCy = window.innerHeight / 2;
-      btn.style.setProperty('--qr-dx', `${vpCx - bCx}px`);
-      btn.style.setProperty('--qr-dy', `${vpCy - bCy}px`);
-    });
-  });
-
 })();
 </script>
+
+<!-- Cloudflare Web Analytics — replace YOUR_TOKEN_HERE with your beacon token from:
+     Cloudflare Dashboard → Analytics & Logs → Web Analytics → Add Site -->
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js'
+        data-cf-beacon='{"token": "YOUR_TOKEN_HERE"}'></script>
 </body>
 </html>
