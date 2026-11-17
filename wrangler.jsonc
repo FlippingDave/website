@@ -24,7 +24,9 @@
   "vars": {
     "CF_ACCOUNT_ID": "a979774e1697c4762d4bf65d827f6274",
     // GoatCounter site code → flippingdave.goatcounter.com (script added to every page by _worker.js)
-    "GOATCOUNTER_CODE": "flippingdave"
+    "GOATCOUNTER_CODE": "flippingdave",
+    // Cloudflare Web Analytics site tag (beacon is auto-injected by Cloudflare) → stats in control room
+    "CF_WA_SITE_TAG": "7868a928d1214f4abafc4f7fbcfa1cb7"
   },
   // Keep any plain variables added in the dashboard (e.g. GOATCOUNTER_CODE) across deploys
   "keep_vars": true
