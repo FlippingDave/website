@@ -21,6 +21,11 @@
 //   CF_WA_SITE_TAG     the site tag (from the Web Analytics site URL/settings) → stats in control
 //                      room, read with the same CF_ACCOUNT_ID / CF_API_TOKEN as above
 //
+// Housekeeping (optional, plain text variables in the dashboard):
+//   STATS_SINCE    reset: only count data from this date/time onwards, e.g. 2026-11-18 or 2026-11-18T09:30
+//                  (applies to all three sources in the control room; remove it to see everything again)
+//   IGNORE_IPS     comma-separated IP addresses this site's tracker should ignore
+//
 // Data point layout (site_events):
 //   blob1 type ('view' | 'click')   blob2 name (button / page)   blob3 page path
 //   blob4 referrer host             blob5 country                blob6 city
@@ -77,6 +82,10 @@ async function record(request, env, url) {
   if (!env.EVENTS) return;
   const ua = request.headers.get('User-Agent') || '';
   if (BOT_RE.test(ua)) return;
+  // Owner opt-out: "Don't track this device" in the control room sets this cookie
+  if (/(?:^|;\s*)fd_notrack=1/.test(request.headers.get('Cookie') || '')) return;
+  const ipAddr = request.headers.get('CF-Connecting-IP') || '';
+  if (ipAddr && String(env.IGNORE_IPS || '').split(/[\s,]+/).includes(ipAddr)) return;
 
   const body = JSON.parse(await request.text() || '{}');
   // legacy payload: { button }
@@ -115,21 +124,34 @@ async function stats(request, env, url) {
     return json({ error: 'Stats key required.' }, 401);
   }
   const days = [1, 7, 30, 90].includes(+url.searchParams.get('days')) ? +url.searchParams.get('days') : 7;
+  // Window = last N days, but never earlier than STATS_SINCE (the "reset" point)
+  const end = new Date();
+  let start = new Date(end.getTime() - days * 864e5);
+  const since = parseSince(env.STATS_SINCE);
+  if (since && since > start) start = since;
+  if (start > end) start = end;
 
   const [own, goat, wa] = await Promise.all([
-    ownStats(env, days).catch(e => ({ error: e.message })),
-    goatStats(env, days).catch(e => ({ configured: true, error: e.message })),
-    webAnalyticsStats(env, days, url).catch(e => ({ configured: true, error: e.message })),
+    ownStats(env, start).catch(e => ({ error: e.message })),
+    goatStats(env, start, end).catch(e => ({ configured: true, error: e.message })),
+    webAnalyticsStats(env, start, end).catch(e => ({ configured: true, error: e.message })),
   ]);
-  return json({ days, ...own, goatcounter: goat, webAnalytics: wa });
+  return json({ days, since: since ? since.toISOString() : undefined, ...own, goatcounter: goat, webAnalytics: wa });
+}
+
+function parseSince(v) {
+  const s = String(v || '').trim();
+  if (!s) return null;
+  const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(s) ? s + 'T00:00:00Z' : s);
+  return isNaN(d) ? null : d;
 }
 
 /* ── Our own tracking (Analytics Engine) ── */
-async function ownStats(env, days) {
+async function ownStats(env, start) {
   if (!env.CF_ACCOUNT_ID || !env.CF_API_TOKEN) {
     return { error: 'Tracking is recording, but stats can’t be read yet: add CF_ACCOUNT_ID and the CF_API_TOKEN secret (Account Analytics: Read) in the Cloudflare project settings.' };
   }
-  const since = `timestamp > NOW() - INTERVAL '${days}' DAY`;
+  const since = `timestamp >= toDateTime('${start.toISOString().slice(0, 19).replace('T', ' ')}')`;
   const n = 'SUM(_sample_interval)';
   const top = (blob, type, limit = 15) =>
     `SELECT ${blob} AS k, ${n} AS n FROM ${DATASET} WHERE blob1 = '${type}' AND ${since} GROUP BY k ORDER BY n DESC LIMIT ${limit}`;
@@ -178,14 +200,12 @@ async function ownStats(env, days) {
 }
 
 /* ── GoatCounter API ── */
-async function goatStats(env, days) {
+async function goatStats(env, start, end) {
   const code = goatCode(env);
   if (!code) return { configured: false };
   const dashboard = `https://${code}.goatcounter.com`;
   if (!env.GOATCOUNTER_TOKEN) return { configured: true, dashboard, error: 'Counting is on. Add the GOATCOUNTER_TOKEN secret to see the numbers here.' };
 
-  const end = new Date();
-  const start = new Date(end.getTime() - days * 864e5);
   const q = `start=${start.toISOString().slice(0, 19)}Z&end=${end.toISOString().slice(0, 19)}Z`;
   const get = async path => {
     const r = await fetch(`${dashboard}/api/v0${path}`, {
@@ -209,14 +229,12 @@ async function goatStats(env, days) {
 }
 
 /* ── Cloudflare Web Analytics (RUM) via GraphQL ── */
-async function webAnalyticsStats(env, days, url) {
+async function webAnalyticsStats(env, start, end) {
   const siteTag = String(env.CF_WA_SITE_TAG || '').trim();
   const dashboard = env.CF_ACCOUNT_ID ? `https://dash.cloudflare.com/${env.CF_ACCOUNT_ID}/web-analytics` : 'https://dash.cloudflare.com/?to=/:account/web-analytics';
   if (!siteTag) return { configured: false, dashboard };
   if (!env.CF_ACCOUNT_ID || !env.CF_API_TOKEN) return { configured: true, dashboard, error: 'Add CF_ACCOUNT_ID and CF_API_TOKEN to read Web Analytics here.' };
 
-  const end = new Date();
-  const start = new Date(end.getTime() - days * 864e5);
   const query = `query($account: String!, $filter: AccountRumPageloadEventsAdaptiveGroupsFilter_InputObject) {
     viewer { accounts(filter: { accountTag: $account }) {
       total: rumPageloadEventsAdaptiveGroups(filter: $filter, limit: 1) { count sum { visits } }

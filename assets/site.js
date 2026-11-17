@@ -2,8 +2,8 @@
 (function () {
   'use strict';
 
-  const VERSION = '2.1.0';
-  const BUILD   = '2026-11-17';
+  const VERSION = '2.2.0';
+  const BUILD   = '2026-11-18';
 
   /* ─────────────── SHARED STATE ─────────────── */
   let droppingIn = true;
@@ -20,7 +20,32 @@
 
   /* ─────────────── TRACKING ───────────────
      Page views + every button click → /api/track → Cloudflare Analytics Engine */
+
+  // "Don't track this device" (set from the control room). Covers all three trackers:
+  //  - this site's tracker: nothing is sent (and the worker also checks the cookie)
+  //  - GoatCounter: its script honours localStorage.skipgc
+  //  - Cloudflare Web Analytics: its beacon posts to /cdn-cgi/rum — dropped on this device
+  const NoTrack = {
+    get on() { return store.get('fd-notrack', '0') === '1'; },
+    set(v) {
+      store.set('fd-notrack', v ? '1' : '0');
+      try { v ? localStorage.setItem('skipgc', 't') : localStorage.removeItem('skipgc'); } catch {}
+      document.cookie = `fd_notrack=${v ? 1 : 0}; path=/; max-age=${v ? 60 * 60 * 24 * 3650 : 0}; SameSite=Lax; Secure`;
+    },
+  };
+  if (NoTrack.on) {
+    NoTrack.set(true); // refresh cookie / skipgc in case either was cleared
+    const isRum = u => /\/cdn-cgi\/rum/.test(String(u && u.url || u));
+    const sb = navigator.sendBeacon && navigator.sendBeacon.bind(navigator);
+    if (sb) navigator.sendBeacon = (u, d) => (isRum(u) ? true : sb(u, d));
+    const f = window.fetch && window.fetch.bind(window);
+    if (f) window.fetch = (u, o) => (isRum(u) ? Promise.resolve(new Response(null, { status: 204 })) : f(u, o));
+    const xo = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function (m, u, ...r) { if (isRum(u)) u = 'data:,'; return xo.call(this, m, u, ...r); };
+  }
+
   function track(type, name) {
+    if (NoTrack.on) return;
     const body = JSON.stringify({
       type, name: String(name || '').slice(0, 96),
       path: location.pathname,
@@ -37,6 +62,7 @@
 
   // GoatCounter counts page views itself (script added by the worker); clicks go as events
   function goatEvent(name) {
+    if (NoTrack.on) return;
     try {
       if (window.goatcounter && window.goatcounter.count) {
         window.goatcounter.count({ path: 'click: ' + name, title: name, event: true });
@@ -613,9 +639,21 @@
             <button class="cr-btn" type="button" data-days="90">90 days</button>
           </div>
           <div class="cr-stats"><p class="cr-muted" style="margin-top:.7rem">Loading…</p></div>
+          <div style="margin-top:1rem;display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
+            <button class="cr-btn" type="button" data-act="reset">↺ Reset stats</button>
+            <span class="cr-muted" data-reset-note></span>
+          </div>
         </section>
 
-        <div class="cr-ver">FlippingDave v${VERSION} · built ${BUILD}</div>
+        <section class="cr-sec">
+          <h3>This device</h3>
+          <div class="cr-vol">
+            <button class="cr-btn" type="button" data-act="notrack"></button>
+            <span class="cr-muted" data-notrack-note></span>
+          </div>
+        </section>
+
+        <div class="cr-ver">FlippingDave v${VERSION} · built ${BUILD}<span data-since></span></div>
       </div>`;
     document.body.appendChild(panel);
 
@@ -637,6 +675,30 @@
     };
     paint();
     muteBtn.addEventListener('click', () => { Tone.toggle(); paint(); });
+
+    // Reset: copies "now" (UTC) for the STATS_SINCE variable in Cloudflare
+    const resetBtn = panel.querySelector('[data-act=reset]');
+    const resetNote = panel.querySelector('[data-reset-note]');
+    resetBtn.addEventListener('click', () => {
+      const stamp = new Date().toISOString().slice(0, 16) + 'Z';
+      const msg = `In Cloudflare → website → Settings → Variables and secrets, set STATS_SINCE (Text) to ${stamp}, then Deploy.`;
+      navigator.clipboard.writeText(stamp)
+        .then(() => { resetNote.textContent = 'Copied ' + stamp + '. ' + msg.replace(' to ' + stamp, ' to it'); })
+        .catch(() => { resetNote.textContent = msg; });
+    });
+
+    // Don't-track-this-device toggle
+    const ntBtn = panel.querySelector('[data-act=notrack]');
+    const ntNote = panel.querySelector('[data-notrack-note]');
+    const paintNT = () => {
+      ntBtn.textContent = NoTrack.on ? '🙈 Not tracked' : '👀 Tracked';
+      ntBtn.classList.toggle('on', NoTrack.on);
+      ntNote.textContent = NoTrack.on
+        ? 'Your visits on this browser aren’t counted.'
+        : 'Tap to stop counting your own visits on this browser.';
+    };
+    paintNT();
+    ntBtn.addEventListener('click', () => { NoTrack.set(!NoTrack.on); paintNT(); });
     range.addEventListener('input', () => { Tone.setVol(range.value / 100); paint(); });
 
     // Stats
@@ -678,6 +740,10 @@
       el.innerHTML = '<p class="cr-muted" style="margin-top:.7rem">Could not load stats.</p>';
       return;
     }
+    const sinceEl = document.querySelector('.cr-panel [data-since]');
+    if (sinceEl) sinceEl.textContent = data.since
+      ? ` · stats since ${new Date(data.since).toLocaleString([], { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`
+      : '';
 
     const list = (title, rows) => `
       <section class="cr-sec"><h3>${esc(title)}</h3>
