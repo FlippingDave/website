@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Referrals · FlippingDave</title>
+
+  <!-- Open Graph — rich previews on socials, messengers, etc. -->
+  <meta property="og:title" content="FlippingDave · Referrals">
+  <meta property="og:description" content="Referral links from FlippingDave">
+  <meta property="og:image" content="https://unavatar.io/twitter/FlippingDave">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="FlippingDave · Referrals">
+  <meta name="twitter:description" content="Referral links from FlippingDave">
+  <meta name="twitter:image" content="https://unavatar.io/twitter/FlippingDave">
+
+  <!-- Favicon -->
+  <link rel="icon" href="https://unavatar.io/twitter/FlippingDave" type="image/jpeg">
+
+  <!-- Preload avatar — visual centrepiece, paint it early -->
+  <link rel="preload" href="https://unavatar.io/twitter/FlippingDave" as="image">
+
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/site.css?v=2.0.0">
+</head>
+<body data-share-text="Sign-up bonuses via FlippingDave's referral links:">
+
+<div class="page">
+  <div class="profile-card">
+
+    <p class="handle">@FlippingDave</p>
+    <h1 class="page-title">Referrals</h1>
+
+    <div class="socials-wrap">
+      <img class="avatar-bg"
+           src="https://unavatar.io/twitter/FlippingDave"
+           alt="FlippingDave"
+           onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/initials/svg?seed=FD&backgroundColor=1a6cf5&textColor=ffffff'">
+
+      <nav class="socials labelled" aria-label="Referral links">
+
+      <a class="soc-btn" style="--bc:#1a6cf5;--bs:rgba(26,108,245,.35)"
+         href="/" title="Back to FlippingDave">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.3 3.3a1 1 0 0 1 1.4 0l8.5 8.2a1 1 0 0 1-.7 1.7H19v6.3a1.5 1.5 0 0 1-1.5 1.5H15a1 1 0 0 1-1-1v-4.5h-4V20a1 1 0 0 1-1 1H6.5A1.5 1.5 0 0 1 5 19.5v-6.3H3.5a1 1 0 0 1-.7-1.7z"/></svg>
+        <span class="soc-label">Home</span>
+      </a>
+
+      <!-- Referral links — add more by copying this block -->
+      <a class="soc-btn brand" style="--bc:#005db4;--bs:rgba(0,93,180,.35)"
+         href="https://portal.independentreserve.com/invite/TKQAPZ" target="_blank" rel="noopener"
+         title="Independent Reserve">
+        <img class="logo" src="/assets/independent-reserve.svg" alt="Independent Reserve">
+        <span class="soc-label">Independent Reserve</span>
+      </a>
+
+      <div class="soc-wrap">
+        <button class="soc-btn" id="share-btn" type="button" title="Share"
+                style="--bc:#7c3aed;--bs:rgba(124,58,237,.35)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+          <span class="soc-label">Share</span>
+        </button>
+        <div class="share-menu" id="share-menu">
+          <button class="share-item" id="copy-link-btn" type="button">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span id="copy-label">Copy link</span>
+          </button>
+          <button class="share-item" id="share-qr" type="button">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 17h4v4h-4z"/></svg>
+            QR code for this page
+          </button>
+          <a class="share-item" id="share-x"  href="#" target="_blank" rel="noopener"><span class="si">𝕏</span> Share on X</a>
+          <a class="share-item" id="share-fb" href="#" target="_blank" rel="noopener"><span class="si">📘</span> Share on Facebook</a>
+          <a class="share-item" id="share-wa" href="#" target="_blank" rel="noopener"><span class="si">💬</span> Share on WhatsApp</a>
+        </div>
+      </div>
+
+      </nav>
+    </div>
+
+    <button id="qr-toggle" class="qr-toggle" type="button" title="Show QR codes">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style="vertical-align:middle;margin-right:4px"><path d="M3 11h2v2H3zm0-4h2v2H3zm4 4h2v2H7zM7 3h2v2H7zm4 0h2v2h-2zm4 8h2v2h-2zm0-4h2v2h-2zm0-4h2v2h-2zm4 8h2v2h-2zM3 15h8v8H3zm2 2v4h4v-4zM13 3h8v8h-8zm2 2v4h4V5zM3 3h8v8H3zm2 2v4h4V5zm8 8h8v8h-8zm2 2v4h4v-4z"/></svg>QR Codes
+    </button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qr-creator@1.0.0/dist/qr-creator.min.js"></script>
+<script src="/assets/site.js?v=2.0.0"></script>
+</body>
+</html>

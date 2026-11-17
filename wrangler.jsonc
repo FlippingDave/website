@@ -10,8 +10,8 @@
   ],
   "analytics_engine_datasets": [
     {
-      "binding": "CLICKS",
-      "dataset": "button_clicks"
+      "binding": "EVENTS",
+      "dataset": "site_events"
     }
   ]
 }
