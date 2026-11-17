@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '2.0.0';
+  const VERSION = '2.1.0';
   const BUILD   = '2026-11-17';
 
   /* ─────────────── SHARED STATE ─────────────── */
@@ -35,6 +35,15 @@
   }
   track('view', location.pathname);
 
+  // GoatCounter counts page views itself (script added by the worker); clicks go as events
+  function goatEvent(name) {
+    try {
+      if (window.goatcounter && window.goatcounter.count) {
+        window.goatcounter.count({ path: 'click: ' + name, title: name, event: true });
+      }
+    } catch {}
+  }
+
   // Capture phase: runs before any handler can stopPropagation()
   document.addEventListener('click', e => {
     const el = e.target.closest('[data-track], .soc-btn, .share-item, .qr-toggle');
@@ -42,6 +51,7 @@
     let name = el.dataset.track || el.getAttribute('title') || el.textContent.trim() || 'unknown';
     if (qrMode && el.classList.contains('soc-btn')) name += ' (QR)';
     track('click', name);
+    goatEvent(name);
   }, true);
 
   /* ─────────────── DROP-IN ANIMATION ─────────────── */
@@ -664,38 +674,60 @@
       });
       return;
     }
-    if (!data || data.error) {
-      el.innerHTML = `<p class="cr-muted" style="margin-top:.7rem">${esc(data && data.error || 'Could not load stats.')}</p>`;
+    if (!data) {
+      el.innerHTML = '<p class="cr-muted" style="margin-top:.7rem">Could not load stats.</p>';
       return;
     }
 
-    const t = data.totals || {};
     const list = (title, rows) => `
       <section class="cr-sec"><h3>${esc(title)}</h3>
         ${rows && rows.length
           ? `<ul class="cr-list">${rows.map(r => `<li><span>${esc(r.k || '(none)')}</span><span>${fmt(r.n)}</span></li>`).join('')}</ul>`
           : '<p class="cr-muted">Nothing yet.</p>'}
       </section>`;
-    const daily = data.daily || [];
-    const max = Math.max(1, ...daily.map(d => +d.n || 0));
-    const recent = (data.recent || []).map(r => ({
-      k: `${new Date(r.t.replace(' ', 'T') + 'Z').toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} · ${r.type === 'view' ? 'viewed ' + r.path : r.name} · ${[r.city, r.country].filter(Boolean).join(', ')}`,
-      n: r.device,
-    }));
+    const tiles = items => `<div class="cr-tiles">${items.map(([v, l]) => `<div class="cr-tile"><b>${fmt(v)}</b><span>${esc(l)}</span></div>`).join('')}</div>`;
+    const note = msg => `<p class="cr-muted" style="margin-top:.6rem">${esc(msg)}</p>`;
+    const head = (title, link) => `<h4 class="cr-src">${esc(title)}${link ? ` <a href="${esc(link)}" target="_blank" rel="noopener">open ↗</a>` : ''}</h4>`;
 
-    el.innerHTML = `
-      <div class="cr-tiles">
-        <div class="cr-tile"><b>${fmt(t.views)}</b><span>Page views</span></div>
-        <div class="cr-tile"><b>${fmt(t.visitors)}</b><span>Visitors</span></div>
-        <div class="cr-tile"><b>${fmt(t.clicks)}</b><span>Clicks</span></div>
-      </div>
-      ${daily.length ? `<div class="cr-bars" title="Page views per day">${daily.map(d => `<div style="height:${(100 * d.n / max).toFixed(1)}%" title="${esc(d.day)}: ${fmt(d.n)}"></div>`).join('')}</div>` : ''}
-      ${list('Button clicks', data.buttons)}
-      ${list('Pages', data.pages)}
-      ${list('Countries', data.countries)}
-      ${list('Referrers', data.referrers)}
-      ${list('Devices', data.devices)}
-      ${list('Latest activity', recent)}`;
+    /* 1 — this site's own tracking (Cloudflare Analytics Engine) */
+    let html = head('This site’s tracker');
+    if (data.error) {
+      html += note(data.error);
+    } else {
+      const t = data.totals || {};
+      const daily = data.daily || [];
+      const max = Math.max(1, ...daily.map(d => +d.n || 0));
+      const recent = (data.recent || []).map(r => ({
+        k: `${new Date(r.t.replace(' ', 'T') + 'Z').toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} · ${r.type === 'view' ? 'viewed ' + r.path : r.name} · ${[r.city, r.country].filter(Boolean).join(', ')}`,
+        n: r.device,
+      }));
+      html += tiles([[t.views, 'Page views'], [t.visitors, 'Visitors'], [t.clicks, 'Clicks']])
+        + (daily.length ? `<div class="cr-bars" title="Page views per day">${daily.map(d => `<div style="height:${(100 * d.n / max).toFixed(1)}%" title="${esc(d.day)}: ${fmt(d.n)}"></div>`).join('')}</div>` : '')
+        + list('Button clicks', data.buttons)
+        + list('Pages', data.pages)
+        + list('Countries', data.countries)
+        + list('Referrers', data.referrers)
+        + list('Devices', data.devices)
+        + list('Latest activity', recent);
+    }
+
+    /* 2 — GoatCounter */
+    const g = data.goatcounter || {};
+    html += head('GoatCounter', g.dashboard);
+    if (!g.configured) html += note('Not set up yet.');
+    else if (g.error) html += note(g.error);
+    else html += tiles([[g.visitors, 'Visitors'], [g.events, 'Click events']])
+      + list('Pages', g.pages) + list('Button clicks', g.clicks);
+
+    /* 3 — Cloudflare Web Analytics */
+    const w = data.webAnalytics || {};
+    html += head('Cloudflare Web Analytics', w.dashboard);
+    if (!w.configured) html += note('Page-load speed and visits live in the Cloudflare dashboard. Add CF_WA_SITE_TAG to show the numbers here too.');
+    else if (w.error) html += note(w.error);
+    else html += tiles([[w.visits, 'Visits'], [w.pageViews, 'Page views']])
+      + list('Pages', w.pages) + list('Countries', w.countries) + list('Referrers', w.referrers);
+
+    el.innerHTML = html;
   }
 
   /* ─────────────── MOBILE TILT + SHAKE ─────────────── */

@@ -468,4 +468,10 @@ body::before {
 .cr-list li span:last-child { font-variant-numeric: tabular-nums; color: var(--sub); flex-shrink: 0; }
 .cr-muted { font-size: .8rem; color: var(--sub); line-height: 1.45; }
 .cr-muted code { font-size: .75rem; background: var(--surface); padding: 0 .25rem; border-radius: 4px; }
+.cr-src {
+  margin: 1.1rem 0 .1rem; padding-top: .9rem; border-top: 1px dashed var(--border);
+  font-size: .85rem; display: flex; justify-content: space-between; align-items: baseline;
+}
+.cr-stats > .cr-src:first-child { border-top: 0; padding-top: 0; margin-top: .8rem; }
+.cr-src a { font-size: .75rem; font-weight: 600; color: var(--accent); text-decoration: none; }
 .cr-ver { margin-top: .9rem; text-align: center; font-size: .75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
