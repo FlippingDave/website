@@ -1,17 +1,33 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "website",
+  "main": "_worker.js",
   "compatibility_date": "2026-04-12",
   "observability": {
     "enabled": true
   },
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
+  // Static files (HTML, images, assets/) are served from the repo root.
+  // run_worker_first lets _worker.js handle /api/* and add analytics scripts to pages.
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
   "analytics_engine_datasets": [
     {
-      "binding": "CLICKS",
-      "dataset": "button_clicks"
+      "binding": "EVENTS",
+      "dataset": "site_events"
     }
-  ]
+  ],
+  // Not secret — identifies the Cloudflare account for reading stats back.
+  // Secrets (CF_API_TOKEN, GOATCOUNTER_TOKEN) go in the dashboard, never here.
+  "vars": {
+    "CF_ACCOUNT_ID": "a979774e1697c4762d4bf65d827f6274",
+    // GoatCounter site code → flippingdave.goatcounter.com (script added to every page by _worker.js)
+    "GOATCOUNTER_CODE": "flippingdave",
+    // Cloudflare Web Analytics site tag (beacon is auto-injected by Cloudflare) → stats in control room
+    "CF_WA_SITE_TAG": "7868a928d1214f4abafc4f7fbcfa1cb7"
+  },
+  // Keep any plain variables added in the dashboard (e.g. GOATCOUNTER_CODE) across deploys
+  "keep_vars": true
 }

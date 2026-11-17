@@ -1,0 +1,11 @@
+# Files that must NOT be published as public web pages
+_worker.js
+wrangler.jsonc
+.assetsignore
+.gitignore
+.git
+.wrangler
+node_modules
+.dev.vars*
+.env*
+*.md
